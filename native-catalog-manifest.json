@@ -4,9 +4,9 @@
     {
       "fileName": "native-algorithms.json",
       "catalogID": "interviewlab.algorithms.derivation",
-      "version": "2026.10.1301",
-      "sha256": "0cb0ab2cf5959bedfdae6358f9f1e65c6c5338939af49a9581f5a1fe1f04d729",
-      "lessons": 18
+      "version": "2026.10.1302",
+      "sha256": "4b3c5d6f0681f4eef25bc96ddc53b266122911a7e2b5044f5e362fcde9598103",
+      "lessons": 20
     },
     {
       "fileName": "native-foundations.json",
@@ -18,9 +18,9 @@
     {
       "fileName": "native-design.json",
       "catalogID": "interviewlab.system-design",
-      "version": "2026.10.1301",
-      "sha256": "60f45ff48cea0d78f8242cefbf09aceaf537e4eff9e22121d9e6f7f658fe0573",
-      "lessons": 6
+      "version": "2026.10.1302",
+      "sha256": "360fcefdd280a127b50a3d776ca0033e498809d002c8094f991d7c0982ab4a6d",
+      "lessons": 8
     },
     {
       "fileName": "native-implementation.json",

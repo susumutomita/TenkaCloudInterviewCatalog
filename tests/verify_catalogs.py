@@ -31,6 +31,14 @@ catalogs = [validate_catalog(path.read_bytes()) for path in ROOT.glob('native-*.
 assert len({item['catalogID'] for item in catalogs}) == len(catalogs)
 for path in ROOT.glob('native-*-manifest.json'):
     manifest = json.loads(path.read_bytes())
+    if 'releases' not in manifest:
+        for entry in manifest['entries']:
+            raw = (ROOT / entry['fileName']).read_bytes()
+            catalog = validate_catalog(raw)
+            assert hashlib.sha256(raw).hexdigest() == entry['sha256']
+            assert catalog['version'] == entry['version']
+            assert len(catalog['lessons']) == entry['lessons']
+        continue
     versions = set()
     for release in manifest['releases']:
         assert release['version'] not in versions
