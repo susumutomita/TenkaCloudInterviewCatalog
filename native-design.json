@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "catalogID": "interviewlab.system-design",
-  "version": "2026.10.1301",
+  "version": "2026.10.1302",
   "title": "システム設計",
   "lessons": [
     {
@@ -16,7 +16,12 @@
         }
       ],
       "contentVersion": "2026-10-12.2",
-      "sources": [],
+      "sources": [
+        {
+          "title": "技術根拠：Stripe Idempotent requests",
+          "url": "https://docs.stripe.com/api/idempotent_requests"
+        }
+      ],
       "estimatedDuration": "25–40分＋PC実装",
       "prerequisites": null,
       "englishPrompt": "Explain why an HTTP timeout does not tell us whether the payment succeeded. Which component owns deduplication at each boundary?",
@@ -169,7 +174,12 @@
         }
       ],
       "contentVersion": "2026-10-12.2",
-      "sources": [],
+      "sources": [
+        {
+          "title": "技術根拠：OWASP Authorization Cheat Sheet",
+          "url": "https://cheatsheetseries.owasp.org/cheatsheets/Authorization_Cheat_Sheet.html"
+        }
+      ],
       "estimatedDuration": "25–40分＋PC実装",
       "prerequisites": null,
       "englishPrompt": "What is the difference between authentication and authorization? Explain the maximum stale-permission window and its availability cost.",
@@ -322,7 +332,16 @@
         }
       ],
       "contentVersion": "2026-10-12.2",
-      "sources": [],
+      "sources": [
+        {
+          "title": "技術根拠：Amazon SQS at-least-once delivery",
+          "url": "https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/standard-queues-at-least-once-delivery.html"
+        },
+        {
+          "title": "技術根拠：Amazon SQS visibility timeout",
+          "url": "https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/sqs-visibility-timeout.html"
+        }
+      ],
       "estimatedDuration": "25–40分＋PC実装",
       "prerequisites": null,
       "englishPrompt": "Our queue offers at-least-once delivery. Walk me through a crash after the side effect but before the acknowledgement.",
@@ -475,7 +494,12 @@
         }
       ],
       "contentVersion": "2026-10-12.2",
-      "sources": [],
+      "sources": [
+        {
+          "title": "技術根拠：Redis INCR・カウンタとレート制限",
+          "url": "https://redis.io/docs/latest/commands/incr/"
+        }
+      ],
       "estimatedDuration": "25–40分＋PC実装",
       "prerequisites": null,
       "englishPrompt": "How would your design change if the quota had to be strict across regions? State exactly which availability or latency property you would give up.",
@@ -612,6 +636,35 @@
           ],
           "reference": "1. 入力token＋最大出力tokenを予算から予約し、同じrequest_idで予約を重複排除。\n2. 実消費が確定したら差額を返す。実行継続中のタイムアウトで予約を早期解放しない。\n3. 推論側の強制最大出力と計測データを信頼境界に置く。照合ジョブで未確定予約を解消。\n4. 地域別予算の合計を全体上限以下にし、再割当の二重利用を防ぐ。\n5. 大きすぎる予約による飢餓に対し、上限、待機列、公平性を設計。",
           "check": "□ request数と計算量を分けた\n□ 予約の二重精算を防いだ\n□ 不明実行状態で枠を返さなかった\n□ 分断時に諦める性質を言えた"
+        },
+        {
+          "id": "boundary-trace",
+          "phase": "境界の反証",
+          "title": "境界の前後を4セルで追う",
+          "prompt": "1秒ごとに最大100回の固定窓。時刻0.99秒に100回、1.01秒に100回。受理数を時間順に4セル（窓ID・更新前count・今回件数・更新後count）で追い、任意の連続1秒に100回という要件を守るか説明する。",
+          "choices": [],
+          "correctChoiceID": null,
+          "explanation": "固定窓は各暦窓100回を守っても、境界付近では0.02秒に200回を通し得る。固定窓の仕様と任意の連続窓の仕様を同じ保証として扱わない。",
+          "reference": "0.99秒: 窓0、count0→100、100回受理。1.01秒: 窓1、count0→100、100回受理。連続区間[0.5,1.5)には200回。厳密な連続窓なら時刻ログなど、別の状態と計算量が必要。",
+          "hints": [
+            "どちらも同じ窓IDになるか？",
+            "単にカウンタとTTLを原子的に更新するだけで、連続窓の仕様まで得られるか？"
+          ],
+          "check": "□ 時間境界のトレース □ 200回の反例 □ 欲しい保証を明示"
+        },
+        {
+          "id": "partition-budget",
+          "phase": "条件を変えた類題",
+          "title": "分断時の超過を数にする",
+          "prompt": "2拠点が分断中、同じ利用者にそれぞれ100回まで許可する。全体100回という契約を保てるか。事前割当を各50回にする案、拒否する案、超過を許す案の失う性質を説明する。",
+          "choices": [],
+          "correctChoiceID": null,
+          "explanation": "各拠点100回なら合計200回、超過は最大100回。事前配分50ずつなら全体上限を保てるが、片側に需要が集中すると未使用枠を借りられない。分断中の枠の再配分を無条件に許すと保証が壊れる。",
+          "reference": "許容超過、可用性、利用率を契約として選ぶ。厳密100なら中央へ確認できない操作を拒否するか、重複しない割当枠を用いる。許容超過を選ぶなら最大量、期間、観測・回復を明示する。",
+          "hints": [
+            "「後で集計する」は今の上限を守るか？"
+          ],
+          "check": "□ 上限200を算出 □ 事前割当の損失 □ 分断復旧時の再配分条件"
         }
       ],
       "notes": "PC 実装の課題（この端末では実行・採点しません）\ntoken bucketと予約／精算ledgerを実装。浮動小数の丸め方と時刻逆行の方針を決める。\n\n検証する例：\n同時要求でもtokenが負にならない\nアイドル後も容量を超えない\n同じrequest_idの予約・精算が重複しても変わらない\n分断シミュレーションで地域予算合計を超えない\n\n性質ベーステストと、許すバーストを表す式。"
@@ -628,7 +681,16 @@
         }
       ],
       "contentVersion": "2026-10-12.2",
-      "sources": [],
+      "sources": [
+        {
+          "title": "技術根拠：Transactional outbox pattern",
+          "url": "https://docs.aws.amazon.com/prescriptive-guidance/latest/cloud-design-patterns/transactional-outbox.html"
+        },
+        {
+          "title": "技術根拠：Amazon SQS at-least-once delivery",
+          "url": "https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/standard-queues-at-least-once-delivery.html"
+        }
+      ],
       "estimatedDuration": "25–40分＋PC実装",
       "prerequisites": null,
       "englishPrompt": "Show me the two crash windows in a dual-write design. What does an outbox solve, and what does it leave unsolved?",
@@ -781,7 +843,12 @@
         }
       ],
       "contentVersion": "2026-10-12.2",
-      "sources": [],
+      "sources": [
+        {
+          "title": "技術根拠：Redis client-side caching・無効化",
+          "url": "https://redis.io/docs/latest/develop/reference/client-side-caching/"
+        }
+      ],
       "estimatedDuration": "25–40分＋PC実装",
       "prerequisites": null,
       "englishPrompt": "Draw a race where cache invalidation still allows stale data. Which guarantees are required for public data versus authorization data?",
@@ -921,12 +988,245 @@
         }
       ],
       "notes": "PC 実装の課題（この端末では実行・採点しません）\nversion付きcache-asideを実装し、非同期バリアでstale-fill競合を再現。\n\n検証する例：\nv1読取→v2更新→invalidate→v1充填の順序\n同じキー100並行missをまとめる\n再充填owner停止後に回復\n異なるtenant／actorでキャッシュが混ざらない\n\n競合を再現するテスト、採用した整合性契約、負荷制限の説明。"
+    },
+    {
+      "id": "design-seat-reservation",
+      "title": "座席予約：期限と遅れた決済をつなぐ",
+      "category": "統合設計演習",
+      "summary": "同時予約、holdの期限、遅れた決済成功を一つの状態機械として設計する。",
+      "authors": [
+        {
+          "name": "Original practice material",
+          "type": "ai-assisted"
+        }
+      ],
+      "contentVersion": "2026-10-13.2",
+      "estimatedDuration": "20–35分＋白紙実装",
+      "sources": [
+        {
+          "title": "公開された企業の練習例：Deliveroo Architecture Interview（出題実績の証拠ではない）",
+          "url": "https://deliveroo.engineering/2022/01/14/preparing-for-the-deliveroo-architecture-interview.html"
+        },
+        {
+          "title": "技術根拠：PostgreSQL Explicit Locking",
+          "url": "https://www.postgresql.org/docs/current/explicit-locking.html"
+        }
+      ],
+      "steps": [
+        {
+          "id": "requirements",
+          "phase": "要件→概算→最小構成",
+          "title": "要件と数字を先に決める",
+          "prompt": "9000席の公演に10000人が30秒でアクセスする。座席を5分holdして決済へ進む。要件、読み取りと書き込みの概算、売り越しと待ち時間のどちらを優先するかを明示する。",
+          "choices": [],
+          "correctChoiceID": null,
+          "explanation": "10000/30は平均約333人/秒で、瞬間ピークや1人の操作数は別。画面閲覧数とhold書き込み数を混同しない。ここでは同じ座席の重複販売を禁止し、holdは期限付きとする。",
+          "reference": "最初は座席・hold・予約・決済参照を持つ一つのDBとAPI。状態更新の正しさを作ってから、閲覧キャッシュ、待機列、分割を検討する。5分の開始点、期限判定の時計、決済待ちの扱いを合意する。",
+          "hints": [
+            "保証したい不変条件を一文にする。"
+          ],
+          "check": "□ 要件 □ 単位付き概算 □ 平均とピーク □ 最小構成"
+        },
+        {
+          "id": "concurrent",
+          "phase": "状態・遷移・トレース",
+          "title": "二人が同時に同じ座席を見た",
+          "prompt": "AとBが同時にavailableを読み、両者がholdを書こうとする。状態、変更条件、同時実行の順序を3セルで書く。「読んでから書く」だけでは何が壊れる？",
+          "choices": [],
+          "correctChoiceID": null,
+          "explanation": "一つの座席に有効なholdは高々一つ。DB内で条件付き更新や行ロックを使い、確認と書き込みを同じ保護された境界に置く。条件が変わった側の失敗も利用者へ返す。",
+          "reference": "初期available→Aの原子的な獲得でheld(A,tokenA,expiry)→Bは更新0件で失敗。SELECTだけの結果を保護せず使うと、AとBが同じavailableを根拠に成功してしまう。",
+          "hints": [
+            "Aの確認と更新の間にBが入る順序を作る。"
+          ],
+          "check": "□ 高々一つのhold □ 原子境界 □ 失敗側の応答 □ 並行テスト"
+        },
+        {
+          "id": "expiry",
+          "phase": "障害と境界",
+          "title": "期限ちょうどを含むか",
+          "prompt": "held(A,tokenA,expires=300)がある。時刻299、300、301の各決済確認をどう扱う？ 期限切れの回収workerが遅れた場合でも、期限後のhold利用を禁止したい。",
+          "choices": [],
+          "correctChoiceID": null,
+          "explanation": "DBの判断に用いる時刻を権威として、now<expiresのみ有効とする契約。workerがまだheldをavailableへ戻していなくても、利用操作自身が期限を検査する。期限境界を時計・トランザクションの位置と合わせる。",
+          "reference": "299はtokenと所有者が一致すれば確認可。300と301は不可。期限切れholdの再獲得と旧holdの確認が競合するので、token/versionを更新条件に含める。",
+          "hints": [
+            "回収workerの実行を、有効期限の保証そのものと考えない。"
+          ],
+          "check": "□ 期限の不等号 □ 判断時計 □ token/version □ 回収遅延を反証"
+        },
+        {
+          "id": "late-payment",
+          "phase": "障害→トレードオフ",
+          "title": "席はBに渡った後だった",
+          "prompt": "Aのhold期限切れ後、Bが同じ席を獲得した。そこへAの決済成功通知が遅れて届く。Aをconfirmedへ進めてよいか。予約状態と返金／照合の状態を分けて考える。",
+          "choices": [],
+          "correctChoiceID": null,
+          "explanation": "決済の成功と座席を確保できることは別。古いtokenの通知でBの席を奪わない。Aには決済参照を記録し、返金・取消・別手配など合意した補償へ進める。通知重複にも同じ決済参照で対応する。",
+          "reference": "Aはexpiredまたはcompensation-pendingのまま。Bのholdは保持。決済イベントIDや決済参照を一意に扱い、補償の再試行・監視・手動照合を設計する。外部決済とDBの単一トランザクションは仮定しない。",
+          "hints": [
+            "座席の状態と、お金の状態を二つの表に分ける。"
+          ],
+          "check": "□ 古いtokenを拒否 □ Bを守る □ 重複通知 □ 補償の失敗と復旧"
+        },
+        {
+          "id": "implement",
+          "phase": "白紙実装",
+          "title": "小さい状態機械から白紙実装",
+          "prompt": "手元でhold、confirm、expireを実装する。二人の同時獲得、299/300の境界、回収worker停止、遅い決済通知、重複通知をテストする。API成功だけで外部補償が完了したことにしない。",
+          "choices": [],
+          "correctChoiceID": null,
+          "explanation": "正解の構成図を写すより、不変条件が破れる実行順序を作る。失敗した順序を再現し、原子性とtoken条件で何が防げたか説明する。",
+          "reference": "テスト対象：有効hold高々一つ、期限後confirm禁止、古いtokenで新holdを上書きしない、重複イベントで補償を重ねない。実行ログは固定サンプルのみ。",
+          "hints": [
+            "まず外部決済を遅延可能なportに置き換えて順序を制御する。"
+          ],
+          "check": "□ 白紙実装 □ 競合順序 □ 境界 □ 実テストと自己申告を区別"
+        },
+        {
+          "id": "transfer",
+          "phase": "条件変更の類題",
+          "title": "一度に連番4席なら？",
+          "prompt": "家族向けに連番4席をまとめてholdする要件へ変える。部分獲得、ロック順、デッドロック、待ち時間、分割配置の制約を自分で設計し直す。",
+          "choices": [],
+          "correctChoiceID": null,
+          "explanation": "単席の原子操作を4回呼ぶだけでは部分獲得が残る。まとめて保護するトランザクション、一定のロック順、再試行と期限を考える。シャード境界をまたぐなら保証と可用性の契約を再検討する。",
+          "reference": "4席全てを獲得するか全て失敗する境界を定義する。座席番号順のロックなどで競合を整理し、DBのデッドロック検出後の再試行も設計する。容量が増えたら元の1席モデルを無条件に一般化しない。",
+          "hints": [
+            "「全て成功」はどの境界で保証する？"
+          ],
+          "check": "□ 部分成功 □ ロック順 □ リトライ □ 分割時の保証"
+        }
+      ],
+      "notes": "独立した演習です。参考リンクは技術の根拠または公式に公開された練習例で、企業の公式過去問ではありません。選択回答・自己評価は実装の検証済みを意味しません。"
+    },
+    {
+      "id": "design-notification-delivery",
+      "title": "通知配信：送信とACKの間で止まる",
+      "category": "統合設計演習",
+      "summary": "既存のoutboxとqueueをつなぎ、重複・期限・再試行の保証を設計する。",
+      "authors": [
+        {
+          "name": "Original practice material",
+          "type": "ai-assisted"
+        }
+      ],
+      "contentVersion": "2026-10-13.2",
+      "estimatedDuration": "20–35分＋白紙実装",
+      "sources": [
+        {
+          "title": "技術根拠：Transactional outbox pattern",
+          "url": "https://docs.aws.amazon.com/prescriptive-guidance/latest/cloud-design-patterns/transactional-outbox.html"
+        },
+        {
+          "title": "技術根拠：Amazon SQS at-least-once delivery",
+          "url": "https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/standard-queues-at-least-once-delivery.html"
+        },
+        {
+          "title": "技術根拠：Amazon SQS visibility timeout",
+          "url": "https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/sqs-visibility-timeout.html"
+        }
+      ],
+      "steps": [
+        {
+          "id": "requirements",
+          "phase": "要件→概算→最小構成",
+          "title": "要件と最小構成を合意する",
+          "prompt": "1日100万件の通知を送る。重要通知は失わないことを優先し、一部の通知には有効期限がある。平均件数/秒と想定ピークを分け、何を「期限内」と約束するか決める。",
+          "choices": [],
+          "correctChoiceID": null,
+          "explanation": "平均は100万/86400≒11.6件/秒。実際のピークは別の観測や仮定が必要。ここでは「期限後に新たな送信試行を開始しない」を契約とし、受信完了時刻までの保証は別途議論する。",
+          "reference": "業務DBと同じトランザクションでoutboxを記録し、publisherがqueueへ運び、workerが通知providerへ送る。件数、遅延、provider上限、deadlineを合意してから構成を増やす。",
+          "hints": [
+            "「開始」と「届く」は同じ時刻ではない。"
+          ],
+          "check": "□ 単位付き概算 □ ピーク仮定 □ 期限の意味 □ 最小構成"
+        },
+        {
+          "id": "outbox",
+          "phase": "状態・遷移",
+          "title": "DBの保存とqueueの間で止まる",
+          "prompt": "業務データは保存済みだが、queueへ送る前にプロセスが止まる順序を書く。逆順なら何が壊れる？ outboxを置く境界を説明する。",
+          "choices": [],
+          "correctChoiceID": null,
+          "explanation": "独立したDB保存とqueue送信の二重書込みでは、片方だけ成功する。業務変更とoutboxレコードを同じDBトランザクションへ置く。publisherは再試行するので、queueへの重複も想定する。",
+          "reference": "commit前停止→業務もoutboxもなし。commit後publisher前停止→outboxから再開。queue送信成功後のpublisher停止→再送があり得る。イベントIDを安定させる。",
+          "hints": [
+            "commitと外部送信を同じ原子的操作と仮定しない。"
+          ],
+          "check": "□ 3停止位置 □ DB内の原子境界 □ 再送のeventID"
+        },
+        {
+          "id": "ack",
+          "phase": "障害のトレース",
+          "title": "送信成功の後でACKを失った",
+          "prompt": "workerがproviderへ送信し成功した直後、queueのACK前に停止。queueは再配信する。同じ通知を二度送らないことと、通知を失わないことを両立するために、providerへどんな条件が必要か。",
+          "choices": [],
+          "correctChoiceID": null,
+          "explanation": "永続フラグだけで外部送信とDB更新を原子的にはできない。providerの安定したidempotency keyや送信状態の照会が使えると重複を抑えられる。使えない場合は重複と欠落の両方を完全に防ぐと約束しない。",
+          "reference": "受理event→送信試行→provider成功→ACK前停止→再配信。providerがeventIDによる同一リクエストを冪等に扱えば再試行は同一送信。そうでなければ、許容するリスクと照合・監視を合意する。",
+          "hints": [
+            "送信前にsent=trueなら、その直後に停止すると？",
+            "送信後にsent=trueなら、その直前に停止すると？"
+          ],
+          "check": "□ 外部境界 □ 二つの停止位置 □ providerの保証 □ 限界を明示"
+        },
+        {
+          "id": "timeout",
+          "phase": "障害→トレードオフ",
+          "title": "visibilityと処理時間を比べる",
+          "prompt": "処理は最大45秒、visibility timeoutは30秒。最初のworkerがまだ動いている間の再配信と、deadline後の再試行を時間順に追う。延長すれば重複が絶対なくなるか。",
+          "choices": [],
+          "correctChoiceID": null,
+          "explanation": "visibilityは処理占有の時間を調整するが、at-least-onceをexactly-onceには変えない。延長や適切なtimeoutと、冪等なprovider境界を組み合わせる。期限の判定を試行ごとに行う。",
+          "reference": "0秒worker A開始→30秒に再可視化→worker Bが受ける→45秒A完了という重複可能な順序。heartbeat延長の失敗も想定。期限切れは新たな送信をせず、監視可能なexpired状態へ。",
+          "hints": [
+            "timeoutは仕事を中止する命令ではない。"
+          ],
+          "check": "□ 並行worker □ 延長失敗 □ deadlineの再確認 □ expiredの扱い"
+        },
+        {
+          "id": "implement",
+          "phase": "白紙実装",
+          "title": "停止位置を変えるテストを作る",
+          "prompt": "手元でpublisherとworkerの小さい状態機械を実装する。outbox commit直後、queue送信直後、provider成功直後、ACK直前で停止させる。期限切れのDLQ再投入をどう止めるかも試す。",
+          "choices": [],
+          "correctChoiceID": null,
+          "explanation": "成功経路だけでなく再送、重複、遅延が保証を壊す位置を確かめる。providerが冪等な場合と非冪等な場合を別の契約としてテストする。",
+          "reference": "eventID、recipient、expiresAt、attemptを保持。重複排除の保存期限はイベント生存期間と最大再試行期間を考えて決める。元のexpiresAtを再投入時に勝手に延長しない。",
+          "hints": [
+            "同じeventIDを二度入れ、provider側の回数を観測する。"
+          ],
+          "check": "□ 故障注入 □ 実行結果 □ DLQと期限 □ 非冪等providerの限界"
+        },
+        {
+          "id": "transfer",
+          "phase": "未誘導の転移",
+          "title": "通知先が三つになった",
+          "prompt": "一つのイベントをメール・アプリ内・SMSへ配信する要件へ変える。どこを独立した状態にし、再試行キー、部分成功、通知の順番をどう定義する？",
+          "choices": [],
+          "correctChoiceID": null,
+          "explanation": "イベント全体のsentフラグ一つでは、一つのchannel成功が他channelの失敗を隠す。eventIDとchannelとrecipientの単位で結果と期限を持つ。providerごとの保証も異なる。",
+          "reference": "部分成功を観測し、失敗した単位だけ再試行する。順序が必要なら範囲を定め、遅いchannelで他を止める代償を説明。元の一送信の設計をそのまま増やさない。",
+          "hints": [
+            "一つのフラグで三つの結果を表せるか？"
+          ],
+          "check": "□ 状態の単位 □ 部分成功 □ 再試行キー □ 順序の代償"
+        }
+      ],
+      "notes": "独立した演習です。参考リンクは技術の根拠または公式に公開された練習例で、企業の公式過去問ではありません。選択回答・自己評価は実装の検証済みを意味しません。"
     }
   ],
   "sourceRelease": {
-    "contentVersion": "2026-10-12.2",
-    "archiveSHA256": "25e1417c988dd53bb8b00d63a05c12b0e5e34bbd2a7093e3c64e725126e54818",
-    "manifestSHA256": "cd9bfb7e8dd33f5818838de626e63df963651a7451439e0eb35ae90bc59215cc",
-    "contentFileSHA256": "763a855a7adbc30d8df11cc2ff2dc6dab1256c8a5b692bccfadcbe888450cbe4"
+    "baseCatalogVersion": "2026.10.1301",
+    "baseCommitSHA": "f70fb5a8fb21cae0bcb113a8e7e744f5e824bb35",
+    "originalArchiveProvenance": {
+      "contentVersion": "2026-10-12.2",
+      "archiveSHA256": "25e1417c988dd53bb8b00d63a05c12b0e5e34bbd2a7093e3c64e725126e54818",
+      "manifestSHA256": "cd9bfb7e8dd33f5818838de626e63df963651a7451439e0eb35ae90bc59215cc",
+      "contentFileSHA256": "763a855a7adbc30d8df11cc2ff2dc6dab1256c8a5b692bccfadcbe888450cbe4"
+    },
+    "revision": "2026-10-13.2",
+    "note": "Archive hashes identify the original base material, not this revised catalog."
   }
 }

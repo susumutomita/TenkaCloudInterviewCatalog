@@ -1,9 +1,121 @@
 {
   "schemaVersion": 1,
   "catalogID": "interviewlab.algorithms.derivation",
-  "version": "2026.10.1301",
-  "title": "アルゴリズムの導出",
+  "version": "2026.10.1302",
+  "title": "典型アルゴリズムの考え方",
   "lessons": [
+    {
+      "id": "learn-enumerate-choices",
+      "title": "選択の組合せを漏れなく試す",
+      "category": "典型の導出",
+      "summary": "小さい制約から、漏れのない列挙と各候補の状態を組み立てる。",
+      "authors": [
+        {
+          "name": "Original practice material",
+          "type": "ai-assisted"
+        }
+      ],
+      "contentVersion": "2026-10-13.2",
+      "estimatedDuration": "20–35分＋白紙実装",
+      "sources": [
+        {
+          "title": "AtCoder ABC190 C：公式問題（別問題への転移用）",
+          "url": "https://atcoder.jp/contests/abc190/tasks/abc190_c"
+        }
+      ],
+      "steps": [
+        {
+          "id": "constraints",
+          "phase": "制約から選ぶ",
+          "title": "何通りなら試せる？",
+          "prompt": "3工程で (2,5)、(1,4)、(3,6) の各組から1つずつ選ぶ。合計9にできるか。まず全候補の数を求め、n=18とn=100のときの仕事量を比較する。型の名前を先に選ばず、何を列挙すれば漏れがないか説明する。",
+          "choices": [],
+          "correctChoiceID": null,
+          "explanation": "各工程は二択なので候補は2^n。18なら262144候補で、候補ごとに18工程を見ると約472万回。100なら約1.27×10^30候補。2^18が小さいことと2^100が小さいことを混同しない。",
+          "reference": "3工程は2×2×2=8通り。18工程は約4.72×10^6個の値を調べる。100工程の素朴な列挙は不適切。他の制約や構造を調べてから別の方法を考える。",
+          "hints": [
+            "一つの工程を決めるごとに候補数はどう増える？",
+            "候補数と、候補一つの評価コストは別に数える。"
+          ],
+          "check": "□ 制約を数にした □ 時間O(n·2^n)と領域O(n)以下を分けた"
+        },
+        {
+          "id": "state",
+          "phase": "状態と不変条件",
+          "title": "候補と選択を一対一にする",
+          "prompt": "番号0〜7で全候補を表したい。下位からi番目のbitが0なら組の左、1なら右を選ぶ。maskと選択を対応させ、同じ候補を重複させず、候補を落とさない理由を説明する。",
+          "choices": [],
+          "correctChoiceID": null,
+          "explanation": "n bitの各位置が工程一つの二択に対応する。0〜2^n−1を走査すれば二択の並びを全て一度ずつ通る。bitの順番と工程の順番を明記する。",
+          "reference": "mask=001は最初の工程だけ右：5+1+3=9。mask=010は第2工程だけ右：2+4+3=9。mask=000は2+1+3=6。",
+          "hints": [
+            "bit 0は最後の工程ではなく、ここでは最初の工程。",
+            "値の合計とmaskは別の状態。"
+          ],
+          "check": "□ bitと工程の対応 □ 列挙範囲 □ 重複・漏れの説明"
+        },
+        {
+          "id": "trace",
+          "phase": "手でトレース",
+          "title": "候補が変わったら何を戻す？",
+          "prompt": "3行の表を自分で埋める：mask 000 / 001 / 010、それぞれ選択値とsum。前の候補のsumを引き継ぐと何が壊れる？",
+          "choices": [],
+          "correctChoiceID": null,
+          "explanation": "sumは各候補の内側で0に初期化する。前候補の値は今回の選択を表さない。目標8は最小6・最大15の間でも作れない。範囲内であることは存在の証明ではない。",
+          "reference": "000: (2,1,3), sum=6\n001: (5,1,3), sum=9\n010: (2,4,3), sum=9\n全8候補の和は6,9,9,12,9,12,12,15。8はない。",
+          "hints": [
+            "sumを初期化する場所はmaskの外か内か？",
+            "目標8を全候補に照らして確かめる。"
+          ],
+          "check": "□ 毎候補sum=0 □ 3行のトレース □ min/maxだけの誤判定を反証"
+        },
+        {
+          "id": "compose",
+          "phase": "疑似コードの組立",
+          "title": "疑似コードを組み立てる",
+          "prompt": "外側の列挙、sumの初期化、内側の選択、目標との比較を正しい順に並べる。空の工程列や同じ値の二択でも定義が一貫するか。",
+          "choices": [],
+          "correctChoiceID": null,
+          "explanation": "候補の評価を独立させる。工程数0なら選び方は空の一通りでsum=0。同じ値の二択は違う選択列でも同じ和になり得るが、存在判定は変わらない。",
+          "reference": "for mask in range(1 << n):\n  total = 0\n  for i in range(n):\n    total += pairs[i][(mask >> i) & 1]\n  if total == target: return True\nreturn False",
+          "hints": [
+            "sum=0は外側ループの最初。",
+            "bitは0か1なので組の添字にできる。"
+          ],
+          "check": "□ 疑似コードを説明 □ 空・同値の境界 □ 判定を候補内で行う"
+        },
+        {
+          "id": "implement",
+          "phase": "白紙実装",
+          "title": "白紙から実装して反証する",
+          "prompt": "手元で possible(pairs,target) を白紙から実装する。(2,5),(1,4),(3,6) の目標9と8、空列の目標0と1、同値二択を試す。参照解答を見る前に、期待値と実行結果を分けて記録する。",
+          "choices": [],
+          "correctChoiceID": null,
+          "explanation": "実装できたという自己申告と、テストを実行した事実は別。落ちたケースの原因をsumの初期化、bitの添字、列挙の終点から追う。",
+          "reference": "期待：9→True、8→False、空列0→True、空列1→False。同値二択[(4,4)]なら4→True、8→False。手元の実行結果と失敗修正を残す。",
+          "hints": [
+            "まず3工程で全8通りを表示して確かめる。"
+          ],
+          "check": "□ 白紙実装 □ 実行したケース □ 失敗と修正 □ 未実行なら未検証と書く"
+        },
+        {
+          "id": "transfer",
+          "phase": "条件を変えた類題",
+          "title": "条件を変えて選び直す",
+          "prompt": "今度は各工程が三択で工程数が12。目標和を作れるかを調べたい。直前の二択コードをそのまま使わず、候補表現、候補数、各候補の評価、計算量を自分で組み立てる。",
+          "choices": [],
+          "correctChoiceID": null,
+          "explanation": "型の名前を答えるだけでは不十分。各工程3通りなので3^12=531441候補。再帰で一工程ずつ決める方法や三進数の桁を使う方法がある。候補ごとに12工程見るなら約638万回。",
+          "reference": "一工程の三択を順に分岐し、深さ12で合計を比較する。枝を捨てるなら根拠が必要。負の値があるとtotal>targetだけでは枝刈りできない。",
+          "hints": [
+            "工程数が少ないという制約を先に使う。",
+            "途中のsumと選択済み工程数を状態にする。"
+          ],
+          "check": "□ 候補数 □ 状態・遷移 □ 計算量 □ 枝刈りの成立条件"
+        }
+      ],
+      "notes": "独立した演習です。参考リンクは技術の根拠または公式に公開された練習例で、企業の公式過去問ではありません。選択回答・自己評価は実装の検証済みを意味しません。"
+    },
     {
       "id": "complement",
       "title": "2つの値を組み合わせる",
@@ -153,312 +265,6 @@
           ],
           "reference": "for i, value in log:\n  if value is in seen: return [seen[value], i]\n  seen[value] = i\nreturn []",
           "check": "□ 検索を登録より先にした\n□ 同じ位置を2回使わない\n□ 空・重複なし・直後の重複を考えた"
-        }
-      ],
-      "notes": ""
-    },
-    {
-      "id": "window-derive",
-      "title": "連続する範囲を扱う",
-      "category": "アルゴリズム",
-      "summary": "アルゴリズム",
-      "authors": [
-        {
-          "type": "ai-assisted",
-          "name": "Original interview-practice material"
-        }
-      ],
-      "contentVersion": "2026-10-12.2",
-      "sources": [],
-      "estimatedDuration": "約10分",
-      "prerequisites": null,
-      "englishPrompt": null,
-      "originalRecordJSON": "{\n  \"id\": \"window-derive\",\n  \"name\": \"連続する範囲を扱う\",\n  \"time\": \"約10分\",\n  \"steps\": [\n    {\n      \"label\": \"まず、素朴に\",\n      \"title\": \"連続区間を全部調べる\",\n      \"prompt\": \"文字列の中で、文字が重複しない最長の連続部分文字列を探します。まず正しい素朴な方法は？\",\n      \"choices\": [\n        \"すべての開始・終了位置を試し、各区間の重複を確認する\",\n        \"文字をソートして連続性を無視する\",\n        \"文字列全体の種類数を返す\"\n      ],\n      \"answer\": 0,\n      \"why\": \"全区間は O(n²) 個。区間を毎回走査して重複確認すると O(n³)。開始位置ごとにSetを伸ばすだけでも O(n²) に改善できます。まず連続区間という条件を守ることが大切です。\"\n    },\n    {\n      \"label\": \"重複する仕事\",\n      \"title\": \"隣の区間はほとんど同じ\",\n      \"prompt\": \"右端を1文字伸ばしたとき、前の区間から変わる情報は少しだけです。重複が現れたとき、何をすれば有効な連続区間へ戻せますか？\",\n      \"choices\": [\n        \"毎回文字列の先頭から再計算する\",\n        \"左端を右へ動かし、重複がなくなるまで取り除く\",\n        \"左端を必ず0に戻す\"\n      ],\n      \"answer\": 1,\n      \"why\": \"現在の区間の文字情報を維持し、右端に追加、必要なら左端から削除します。両端が後戻りしなければ、各文字の追加・削除は高々1回ずつです。\"\n    },\n    {\n      \"label\": \"型と使える条件\",\n      \"title\": \"窓を縮める根拠は？\",\n      \"prompt\": \"この問題で sliding window が使える根拠は？\",\n      \"choices\": [\n        \"すべての配列問題は窓で解ける\",\n        \"重複のない区間は、左から文字を除いても重複が増えない\",\n        \"値をソートすれば連続性を保てる\"\n      ],\n      \"answer\": 1,\n      \"why\": \"有効な窓を保ちながら端を動かせる性質を使います。「連続している」だけでは十分ではありません。例えば負数を含む配列の和では、右へ伸ばすと和が増えるとは限らず、大小だけで端を動かす方法は一般には成立しません。\"\n    },\n    {\n      \"label\": \"手で動かす\",\n      \"title\": \"窓の外の重複は気にしない\",\n      \"code\": \"s = \\\"abba\\\"\\ni=2 の b を処理後: left=2, 窓=\\\"b\\\"\\ni=3 の a: 前のaは位置0\",\n      \"prompt\": \"最後の a の処理で left はどこ？\",\n      \"choices\": [\n        \"0\",\n        \"1\",\n        \"2\"\n      ],\n      \"answer\": 2,\n      \"why\": \"前のaは窓の外です。left = max(left, last[a]+1) = max(2,1) = 2。左端を戻さず、窓 \\\"ba\\\" の長さは2。\\\"bba\\\" を誤って数えないようにします。\"\n    },\n    {\n      \"label\": \"ヒントなしで転用\",\n      \"title\": \"条件を変えて考える\",\n      \"prompt\": \"正整数だけの処理時間配列 [2,1,3,2] がある。合計が4以下の最長連続区間の長さを求めたい（答え2）。入力はすべて正整数。保持する情報、追加する条件、縮める条件を説明してください。\",\n      \"transfer\": true,\n      \"hints\": [\n        \"毎回区間の和を計算せず、現在の和を更新できる？\",\n        \"右端を追加して和が4を超えたら、左端の値を引く。正整数という条件がなぜ重要？\"\n      ],\n      \"why\": \"左右の端と現在の和を保持。右端を加え、和が4を超える間は左端を引いて進める。有効になった窓の長さで最大値を更新。各端が高々n回進むので時間 O(n)、領域 O(1)。負数を許すとこの方針は一般に壊れます。\",\n      \"reference\": \"left=0, sum=0, best=0\\nfor right in positions:\\n  sum += a[right]\\n  while sum > 4:\\n    sum -= a[left]; left += 1\\n  best = max(best, right-left+1)\",\n      \"check\": \"□ 和を差分更新した\\n□ whileで必要なだけ縮めた\\n□ 正整数という前提を説明した\"\n    }\n  ],\n  \"category\": \"intro\",\n  \"contentVersion\": \"2026-10-12.2\",\n  \"authors\": [\n    {\n      \"type\": \"ai-assisted\",\n      \"name\": \"Original interview-practice material\"\n    }\n  ],\n  \"sources\": []\n}",
-      "steps": [
-        {
-          "id": "step-1",
-          "phase": "まず、素朴に",
-          "title": "連続区間を全部調べる",
-          "prompt": "文字列の中で、文字が重複しない最長の連続部分文字列を探します。まず正しい素朴な方法は？",
-          "choices": [
-            {
-              "id": "choice-0",
-              "text": "すべての開始・終了位置を試し、各区間の重複を確認する",
-              "explanation": "全区間は O(n²) 個。区間を毎回走査して重複確認すると O(n³)。開始位置ごとにSetを伸ばすだけでも O(n²) に改善できます。まず連続区間という条件を守ることが大切です。"
-            },
-            {
-              "id": "choice-1",
-              "text": "文字をソートして連続性を無視する",
-              "explanation": "全区間は O(n²) 個。区間を毎回走査して重複確認すると O(n³)。開始位置ごとにSetを伸ばすだけでも O(n²) に改善できます。まず連続区間という条件を守ることが大切です。"
-            },
-            {
-              "id": "choice-2",
-              "text": "文字列全体の種類数を返す",
-              "explanation": "全区間は O(n²) 個。区間を毎回走査して重複確認すると O(n³)。開始位置ごとにSetを伸ばすだけでも O(n²) に改善できます。まず連続区間という条件を守ることが大切です。"
-            }
-          ],
-          "correctChoiceID": "choice-0",
-          "explanation": "全区間は O(n²) 個。区間を毎回走査して重複確認すると O(n³)。開始位置ごとにSetを伸ばすだけでも O(n²) に改善できます。まず連続区間という条件を守ることが大切です。",
-          "code": null,
-          "hints": null,
-          "reference": null,
-          "check": null
-        },
-        {
-          "id": "step-2",
-          "phase": "重複する仕事",
-          "title": "隣の区間はほとんど同じ",
-          "prompt": "右端を1文字伸ばしたとき、前の区間から変わる情報は少しだけです。重複が現れたとき、何をすれば有効な連続区間へ戻せますか？",
-          "choices": [
-            {
-              "id": "choice-0",
-              "text": "毎回文字列の先頭から再計算する",
-              "explanation": "現在の区間の文字情報を維持し、右端に追加、必要なら左端から削除します。両端が後戻りしなければ、各文字の追加・削除は高々1回ずつです。"
-            },
-            {
-              "id": "choice-1",
-              "text": "左端を右へ動かし、重複がなくなるまで取り除く",
-              "explanation": "現在の区間の文字情報を維持し、右端に追加、必要なら左端から削除します。両端が後戻りしなければ、各文字の追加・削除は高々1回ずつです。"
-            },
-            {
-              "id": "choice-2",
-              "text": "左端を必ず0に戻す",
-              "explanation": "現在の区間の文字情報を維持し、右端に追加、必要なら左端から削除します。両端が後戻りしなければ、各文字の追加・削除は高々1回ずつです。"
-            }
-          ],
-          "correctChoiceID": "choice-1",
-          "explanation": "現在の区間の文字情報を維持し、右端に追加、必要なら左端から削除します。両端が後戻りしなければ、各文字の追加・削除は高々1回ずつです。",
-          "code": null,
-          "hints": null,
-          "reference": null,
-          "check": null
-        },
-        {
-          "id": "step-3",
-          "phase": "型と使える条件",
-          "title": "窓を縮める根拠は？",
-          "prompt": "この問題で sliding window が使える根拠は？",
-          "choices": [
-            {
-              "id": "choice-0",
-              "text": "すべての配列問題は窓で解ける",
-              "explanation": "有効な窓を保ちながら端を動かせる性質を使います。「連続している」だけでは十分ではありません。例えば負数を含む配列の和では、右へ伸ばすと和が増えるとは限らず、大小だけで端を動かす方法は一般には成立しません。"
-            },
-            {
-              "id": "choice-1",
-              "text": "重複のない区間は、左から文字を除いても重複が増えない",
-              "explanation": "有効な窓を保ちながら端を動かせる性質を使います。「連続している」だけでは十分ではありません。例えば負数を含む配列の和では、右へ伸ばすと和が増えるとは限らず、大小だけで端を動かす方法は一般には成立しません。"
-            },
-            {
-              "id": "choice-2",
-              "text": "値をソートすれば連続性を保てる",
-              "explanation": "有効な窓を保ちながら端を動かせる性質を使います。「連続している」だけでは十分ではありません。例えば負数を含む配列の和では、右へ伸ばすと和が増えるとは限らず、大小だけで端を動かす方法は一般には成立しません。"
-            }
-          ],
-          "correctChoiceID": "choice-1",
-          "explanation": "有効な窓を保ちながら端を動かせる性質を使います。「連続している」だけでは十分ではありません。例えば負数を含む配列の和では、右へ伸ばすと和が増えるとは限らず、大小だけで端を動かす方法は一般には成立しません。",
-          "code": null,
-          "hints": null,
-          "reference": null,
-          "check": null
-        },
-        {
-          "id": "step-4",
-          "phase": "手で動かす",
-          "title": "窓の外の重複は気にしない",
-          "prompt": "最後の a の処理で left はどこ？",
-          "choices": [
-            {
-              "id": "choice-0",
-              "text": "0",
-              "explanation": "前のaは窓の外です。left = max(left, last[a]+1) = max(2,1) = 2。左端を戻さず、窓 \"ba\" の長さは2。\"bba\" を誤って数えないようにします。"
-            },
-            {
-              "id": "choice-1",
-              "text": "1",
-              "explanation": "前のaは窓の外です。left = max(left, last[a]+1) = max(2,1) = 2。左端を戻さず、窓 \"ba\" の長さは2。\"bba\" を誤って数えないようにします。"
-            },
-            {
-              "id": "choice-2",
-              "text": "2",
-              "explanation": "前のaは窓の外です。left = max(left, last[a]+1) = max(2,1) = 2。左端を戻さず、窓 \"ba\" の長さは2。\"bba\" を誤って数えないようにします。"
-            }
-          ],
-          "correctChoiceID": "choice-2",
-          "explanation": "前のaは窓の外です。left = max(left, last[a]+1) = max(2,1) = 2。左端を戻さず、窓 \"ba\" の長さは2。\"bba\" を誤って数えないようにします。",
-          "code": "s = \"abba\"\ni=2 の b を処理後: left=2, 窓=\"b\"\ni=3 の a: 前のaは位置0",
-          "hints": null,
-          "reference": null,
-          "check": null
-        },
-        {
-          "id": "step-5",
-          "phase": "ヒントなしで転用",
-          "title": "条件を変えて考える",
-          "prompt": "正整数だけの処理時間配列 [2,1,3,2] がある。合計が4以下の最長連続区間の長さを求めたい（答え2）。入力はすべて正整数。保持する情報、追加する条件、縮める条件を説明してください。",
-          "choices": [],
-          "correctChoiceID": null,
-          "explanation": "左右の端と現在の和を保持。右端を加え、和が4を超える間は左端を引いて進める。有効になった窓の長さで最大値を更新。各端が高々n回進むので時間 O(n)、領域 O(1)。負数を許すとこの方針は一般に壊れます。",
-          "code": null,
-          "hints": [
-            "毎回区間の和を計算せず、現在の和を更新できる？",
-            "右端を追加して和が4を超えたら、左端の値を引く。正整数という条件がなぜ重要？"
-          ],
-          "reference": "left=0, sum=0, best=0\nfor right in positions:\n  sum += a[right]\n  while sum > 4:\n    sum -= a[left]; left += 1\n  best = max(best, right-left+1)",
-          "check": "□ 和を差分更新した\n□ whileで必要なだけ縮めた\n□ 正整数という前提を説明した"
-        }
-      ],
-      "notes": ""
-    },
-    {
-      "id": "boundary",
-      "title": "境界を見つける",
-      "category": "アルゴリズム",
-      "summary": "アルゴリズム",
-      "authors": [
-        {
-          "type": "ai-assisted",
-          "name": "Original interview-practice material"
-        }
-      ],
-      "contentVersion": "2026-10-12.2",
-      "sources": [],
-      "estimatedDuration": "約8分",
-      "prerequisites": null,
-      "englishPrompt": null,
-      "originalRecordJSON": "{\n  \"id\": \"boundary\",\n  \"name\": \"境界を見つける\",\n  \"time\": \"約8分\",\n  \"steps\": [\n    {\n      \"label\": \"まず、素朴に\",\n      \"title\": \"最初の条件成立を探す\",\n      \"prompt\": \"昇順配列 [1,3,3,8] で、3以上となる最初の位置を探したい。単純で正しい方法は？\",\n      \"choices\": [\n        \"先頭から条件を満たすまで順に見る\",\n        \"中央の位置を常に返す\",\n        \"最後の要素だけ見る\"\n      ],\n      \"answer\": 0,\n      \"why\": \"左から線形探索すれば O(n) で見つかります。存在しなければ配列長を返す、という出力条件も先に決めましょう。\"\n    },\n    {\n      \"label\": \"省ける仕事\",\n      \"title\": \"確認しなくてよい半分\",\n      \"prompt\": \"中央の値が target より小さかった。昇順という条件から何が分かる？\",\n      \"choices\": [\n        \"中央より左も含めて答えにならない\",\n        \"中央より右はすべて答えにならない\",\n        \"全要素を確認し直す必要がある\"\n      ],\n      \"answer\": 0,\n      \"why\": \"中央以下の位置の値はすべて target 未満。左半分と中央をまとめて除外できます。これが毎回1件ずつ見る仕事を減らす根拠です。\"\n    },\n    {\n      \"label\": \"不変条件を選ぶ\",\n      \"title\": \"境界はどこに残す？\",\n      \"prompt\": \"[lo,hi) を未確定範囲とする lower_bound。a[mid] >= target のとき、最初の成立位置を捨てない更新は？\",\n      \"choices\": [\n        \"lo = mid + 1\",\n        \"hi = mid\",\n        \"hi = mid - 1\"\n      ],\n      \"answer\": 1,\n      \"why\": \"mid 自身が境界候補です。hi=mid として答えの候補を境界に保持します。述語 a[i]>=target が false…false,true…true と単調なので二分探索できます。任意の未ソート配列にはそのまま使えません。\"\n    },\n    {\n      \"label\": \"手で動かす\",\n      \"title\": \"要素が1つでも止まる？\",\n      \"code\": \"a=[2], target=3\\nlo=0, hi=1\\nmid=0 → a[mid] < target\",\n      \"prompt\": \"次の lo, hi と返り値は？\",\n      \"choices\": [\n        \"lo=0, hi=1、返り値0\",\n        \"lo=1, hi=1、返り値1\",\n        \"lo=0, hi=0、返り値0\"\n      ],\n      \"answer\": 1,\n      \"why\": \"lo=mid+1=1。lo==hi で終了し、配列長1を返します。lo=mid では範囲が縮まず無限ループになります。毎回範囲が縮むことを確認しましょう。\"\n    },\n    {\n      \"label\": \"ヒントなしで転用\",\n      \"title\": \"配列ではなく判定関数\",\n      \"prompt\": \"バージョン1〜nについて isBad(v) を呼べる。ある版以降はすべて不良、それより前は正常。不良がなければ n+1 を返したい。呼び出し回数を減らすには？ 保つ範囲と更新を説明してください。\",\n      \"transfer\": true,\n      \"hints\": [\n        \"判定結果は false の列のあとに true の列が続きます。最初のtrueを探せる？\",\n        \"lo=1, hi=n+1 と置き、mid≤n の範囲だけ isBad を呼ぶ形を考える。\"\n      ],\n      \"why\": \"lo=1, hi=n+1。lo<hi の間、mid=floor((lo+hi)/2)。isBad(mid) がtrueなら hi=mid、falseなら lo=mid+1。ループ内のmidは常にn以下なので番兵n+1を呼ばずに済みます。O(log n) 回の判定。\",\n      \"reference\": \"lo=1; hi=n+1\\nwhile lo < hi:\\n  mid=floor((lo+hi)/2)\\n  if isBad(mid): hi=mid\\n  else: lo=mid+1\\nreturn lo\",\n      \"check\": \"□ 単調性を前提にした\\n□ 不良なしでn+1を返す\\n□ 毎回区間が縮む\"\n    }\n  ],\n  \"category\": \"intro\",\n  \"contentVersion\": \"2026-10-12.2\",\n  \"authors\": [\n    {\n      \"type\": \"ai-assisted\",\n      \"name\": \"Original interview-practice material\"\n    }\n  ],\n  \"sources\": []\n}",
-      "steps": [
-        {
-          "id": "step-1",
-          "phase": "まず、素朴に",
-          "title": "最初の条件成立を探す",
-          "prompt": "昇順配列 [1,3,3,8] で、3以上となる最初の位置を探したい。単純で正しい方法は？",
-          "choices": [
-            {
-              "id": "choice-0",
-              "text": "先頭から条件を満たすまで順に見る",
-              "explanation": "左から線形探索すれば O(n) で見つかります。存在しなければ配列長を返す、という出力条件も先に決めましょう。"
-            },
-            {
-              "id": "choice-1",
-              "text": "中央の位置を常に返す",
-              "explanation": "左から線形探索すれば O(n) で見つかります。存在しなければ配列長を返す、という出力条件も先に決めましょう。"
-            },
-            {
-              "id": "choice-2",
-              "text": "最後の要素だけ見る",
-              "explanation": "左から線形探索すれば O(n) で見つかります。存在しなければ配列長を返す、という出力条件も先に決めましょう。"
-            }
-          ],
-          "correctChoiceID": "choice-0",
-          "explanation": "左から線形探索すれば O(n) で見つかります。存在しなければ配列長を返す、という出力条件も先に決めましょう。",
-          "code": null,
-          "hints": null,
-          "reference": null,
-          "check": null
-        },
-        {
-          "id": "step-2",
-          "phase": "省ける仕事",
-          "title": "確認しなくてよい半分",
-          "prompt": "中央の値が target より小さかった。昇順という条件から何が分かる？",
-          "choices": [
-            {
-              "id": "choice-0",
-              "text": "中央より左も含めて答えにならない",
-              "explanation": "中央以下の位置の値はすべて target 未満。左半分と中央をまとめて除外できます。これが毎回1件ずつ見る仕事を減らす根拠です。"
-            },
-            {
-              "id": "choice-1",
-              "text": "中央より右はすべて答えにならない",
-              "explanation": "中央以下の位置の値はすべて target 未満。左半分と中央をまとめて除外できます。これが毎回1件ずつ見る仕事を減らす根拠です。"
-            },
-            {
-              "id": "choice-2",
-              "text": "全要素を確認し直す必要がある",
-              "explanation": "中央以下の位置の値はすべて target 未満。左半分と中央をまとめて除外できます。これが毎回1件ずつ見る仕事を減らす根拠です。"
-            }
-          ],
-          "correctChoiceID": "choice-0",
-          "explanation": "中央以下の位置の値はすべて target 未満。左半分と中央をまとめて除外できます。これが毎回1件ずつ見る仕事を減らす根拠です。",
-          "code": null,
-          "hints": null,
-          "reference": null,
-          "check": null
-        },
-        {
-          "id": "step-3",
-          "phase": "不変条件を選ぶ",
-          "title": "境界はどこに残す？",
-          "prompt": "[lo,hi) を未確定範囲とする lower_bound。a[mid] >= target のとき、最初の成立位置を捨てない更新は？",
-          "choices": [
-            {
-              "id": "choice-0",
-              "text": "lo = mid + 1",
-              "explanation": "mid 自身が境界候補です。hi=mid として答えの候補を境界に保持します。述語 a[i]>=target が false…false,true…true と単調なので二分探索できます。任意の未ソート配列にはそのまま使えません。"
-            },
-            {
-              "id": "choice-1",
-              "text": "hi = mid",
-              "explanation": "mid 自身が境界候補です。hi=mid として答えの候補を境界に保持します。述語 a[i]>=target が false…false,true…true と単調なので二分探索できます。任意の未ソート配列にはそのまま使えません。"
-            },
-            {
-              "id": "choice-2",
-              "text": "hi = mid - 1",
-              "explanation": "mid 自身が境界候補です。hi=mid として答えの候補を境界に保持します。述語 a[i]>=target が false…false,true…true と単調なので二分探索できます。任意の未ソート配列にはそのまま使えません。"
-            }
-          ],
-          "correctChoiceID": "choice-1",
-          "explanation": "mid 自身が境界候補です。hi=mid として答えの候補を境界に保持します。述語 a[i]>=target が false…false,true…true と単調なので二分探索できます。任意の未ソート配列にはそのまま使えません。",
-          "code": null,
-          "hints": null,
-          "reference": null,
-          "check": null
-        },
-        {
-          "id": "step-4",
-          "phase": "手で動かす",
-          "title": "要素が1つでも止まる？",
-          "prompt": "次の lo, hi と返り値は？",
-          "choices": [
-            {
-              "id": "choice-0",
-              "text": "lo=0, hi=1、返り値0",
-              "explanation": "lo=mid+1=1。lo==hi で終了し、配列長1を返します。lo=mid では範囲が縮まず無限ループになります。毎回範囲が縮むことを確認しましょう。"
-            },
-            {
-              "id": "choice-1",
-              "text": "lo=1, hi=1、返り値1",
-              "explanation": "lo=mid+1=1。lo==hi で終了し、配列長1を返します。lo=mid では範囲が縮まず無限ループになります。毎回範囲が縮むことを確認しましょう。"
-            },
-            {
-              "id": "choice-2",
-              "text": "lo=0, hi=0、返り値0",
-              "explanation": "lo=mid+1=1。lo==hi で終了し、配列長1を返します。lo=mid では範囲が縮まず無限ループになります。毎回範囲が縮むことを確認しましょう。"
-            }
-          ],
-          "correctChoiceID": "choice-1",
-          "explanation": "lo=mid+1=1。lo==hi で終了し、配列長1を返します。lo=mid では範囲が縮まず無限ループになります。毎回範囲が縮むことを確認しましょう。",
-          "code": "a=[2], target=3\nlo=0, hi=1\nmid=0 → a[mid] < target",
-          "hints": null,
-          "reference": null,
-          "check": null
-        },
-        {
-          "id": "step-5",
-          "phase": "ヒントなしで転用",
-          "title": "配列ではなく判定関数",
-          "prompt": "バージョン1〜nについて isBad(v) を呼べる。ある版以降はすべて不良、それより前は正常。不良がなければ n+1 を返したい。呼び出し回数を減らすには？ 保つ範囲と更新を説明してください。",
-          "choices": [],
-          "correctChoiceID": null,
-          "explanation": "lo=1, hi=n+1。lo<hi の間、mid=floor((lo+hi)/2)。isBad(mid) がtrueなら hi=mid、falseなら lo=mid+1。ループ内のmidは常にn以下なので番兵n+1を呼ばずに済みます。O(log n) 回の判定。",
-          "code": null,
-          "hints": [
-            "判定結果は false の列のあとに true の列が続きます。最初のtrueを探せる？",
-            "lo=1, hi=n+1 と置き、mid≤n の範囲だけ isBad を呼ぶ形を考える。"
-          ],
-          "reference": "lo=1; hi=n+1\nwhile lo < hi:\n  mid=floor((lo+hi)/2)\n  if isBad(mid): hi=mid\n  else: lo=mid+1\nreturn lo",
-          "check": "□ 単調性を前提にした\n□ 不良なしでn+1を返す\n□ 毎回区間が縮む"
         }
       ],
       "notes": ""
@@ -770,159 +576,6 @@
       "notes": "対応する実装問題 ID：learn-two-pointers（アルゴリズム実装カタログ）"
     },
     {
-      "id": "learn-window",
-      "title": "連続区間を保つ",
-      "category": "アルゴリズム",
-      "summary": "Sliding window",
-      "authors": [
-        {
-          "type": "ai-assisted",
-          "name": "Original interview-practice material"
-        }
-      ],
-      "contentVersion": "2026-10-12.2",
-      "sources": [],
-      "estimatedDuration": "約10〜15分",
-      "prerequisites": null,
-      "englishPrompt": null,
-      "originalRecordJSON": "{\n  \"id\": \"learn-window\",\n  \"name\": \"連続区間を保つ\",\n  \"time\": \"約10〜15分\",\n  \"pattern\": \"Sliding window\",\n  \"problemId\": \"learn-window\",\n  \"steps\": [\n    {\n      \"label\": \"まず、素朴に\",\n      \"title\": \"正しさを先に作る\",\n      \"prompt\": \"連続区間の最長を安全に求めるには？\",\n      \"choices\": [\n        \"ソートしてから連続区間の和を調べる\",\n        \"開始ごとに終了を伸ばし和を調べる\",\n        \"区間の和が超えたら右端だけを戻す\"\n      ],\n      \"answer\": 1,\n      \"why\": \"区間の和を差分更新しても全区間がO(n²)個。ソートや途中の削除は元の連続性を壊す。\"\n    },\n    {\n      \"label\": \"重複する仕事\",\n      \"title\": \"どの仕事を減らせる？\",\n      \"prompt\": \"右端を1つ追加したとき、和を毎回計算し直す必要は？\",\n      \"choices\": [\n        \"追加分を足し、除いた左端を引く\",\n        \"追加分を足し、超えたら和を0へ戻す\",\n        \"追加分を足し、超えたら最大要素を引く\"\n      ],\n      \"answer\": 0,\n      \"why\": \"隣り合う区間は大部分を共有する。和と両端を保持すれば差分更新できる。\"\n    },\n    {\n      \"label\": \"条件と不変条件\",\n      \"title\": \"この道具を選ぶ根拠\",\n      \"prompt\": \"和がlimitを超えたら左端を捨ててよい根拠は？\",\n      \"choices\": [\n        \"負数でも、左を除けば必ず和が減る\",\n        \"和が超えたら、左を1回除けば必ず足りる\",\n        \"非負なので、延長しても和は減らない\"\n      ],\n      \"answer\": 2,\n      \"why\": \"縮めた後はsum≤limit。捨てた開始位置は後の右端でも復活しない。負数ありの [5,-4], limit=1 では5を捨てると長さ2の正解を失う。負数を含む和には別の手段を検討する。\"\n    },\n    {\n      \"label\": \"手で動かす\",\n      \"title\": \"境界を含めて追跡する\",\n      \"code\": \"nums=[2,1,3,2], limit=4\\nright=2 で sum=6, left=0\",\n      \"prompt\": \"縮めた後は？\",\n      \"choices\": [\n        \"left=2,sum=3まで縮め長さ1を評価\",\n        \"left=1,sum=4として長さ2を評価\",\n        \"left=0,sum=6のまま長さ3を評価\"\n      ],\n      \"answer\": 1,\n      \"why\": \"2だけ除けば和4。whileで必要なだけ縮め、成立後に長さ更新。0があっても両端は後退しない。\"\n    },\n    {\n      \"label\": \"ヒントなしで転用\",\n      \"title\": \"別の状況でも組み立てる\",\n      \"prompt\": \"文字列から同じ文字を含まない最長の連続部分を探す。新しい文字で重複したとき、区間をどう直す？\",\n      \"transfer\": true,\n      \"hints\": [\n        \"区間内の出現数を持つ。\",\n        \"重複が消えるまで左側を除く。\"\n      ],\n      \"why\": \"頻度Mapと両端を持つ。追加文字が重複する間、左端の文字数を減らす。削除で重複は増えない。O(n)、文字種類数分の領域。\",\n      \"reference\": \"for right: count[s[right]]++; while count[s[right]]>1: count[s[left++]]--; update best\",\n      \"check\": \"□ 素朴な解法から改善を説明した\\n□ 保持する情報と更新条件を説明した\\n□ 空・最小・境界の入力を確認した\\n□ 時間と追加領域を説明した\"\n    }\n  ],\n  \"implementationId\": \"learn-window\",\n  \"category\": \"algorithm\",\n  \"contentVersion\": \"2026-10-12.2\",\n  \"authors\": [\n    {\n      \"type\": \"ai-assisted\",\n      \"name\": \"Original interview-practice material\"\n    }\n  ],\n  \"sources\": []\n}",
-      "steps": [
-        {
-          "id": "step-1",
-          "phase": "まず、素朴に",
-          "title": "正しさを先に作る",
-          "prompt": "連続区間の最長を安全に求めるには？",
-          "choices": [
-            {
-              "id": "choice-0",
-              "text": "ソートしてから連続区間の和を調べる",
-              "explanation": "区間の和を差分更新しても全区間がO(n²)個。ソートや途中の削除は元の連続性を壊す。"
-            },
-            {
-              "id": "choice-1",
-              "text": "開始ごとに終了を伸ばし和を調べる",
-              "explanation": "区間の和を差分更新しても全区間がO(n²)個。ソートや途中の削除は元の連続性を壊す。"
-            },
-            {
-              "id": "choice-2",
-              "text": "区間の和が超えたら右端だけを戻す",
-              "explanation": "区間の和を差分更新しても全区間がO(n²)個。ソートや途中の削除は元の連続性を壊す。"
-            }
-          ],
-          "correctChoiceID": "choice-1",
-          "explanation": "区間の和を差分更新しても全区間がO(n²)個。ソートや途中の削除は元の連続性を壊す。",
-          "code": null,
-          "hints": null,
-          "reference": null,
-          "check": null
-        },
-        {
-          "id": "step-2",
-          "phase": "重複する仕事",
-          "title": "どの仕事を減らせる？",
-          "prompt": "右端を1つ追加したとき、和を毎回計算し直す必要は？",
-          "choices": [
-            {
-              "id": "choice-0",
-              "text": "追加分を足し、除いた左端を引く",
-              "explanation": "隣り合う区間は大部分を共有する。和と両端を保持すれば差分更新できる。"
-            },
-            {
-              "id": "choice-1",
-              "text": "追加分を足し、超えたら和を0へ戻す",
-              "explanation": "隣り合う区間は大部分を共有する。和と両端を保持すれば差分更新できる。"
-            },
-            {
-              "id": "choice-2",
-              "text": "追加分を足し、超えたら最大要素を引く",
-              "explanation": "隣り合う区間は大部分を共有する。和と両端を保持すれば差分更新できる。"
-            }
-          ],
-          "correctChoiceID": "choice-0",
-          "explanation": "隣り合う区間は大部分を共有する。和と両端を保持すれば差分更新できる。",
-          "code": null,
-          "hints": null,
-          "reference": null,
-          "check": null
-        },
-        {
-          "id": "step-3",
-          "phase": "条件と不変条件",
-          "title": "この道具を選ぶ根拠",
-          "prompt": "和がlimitを超えたら左端を捨ててよい根拠は？",
-          "choices": [
-            {
-              "id": "choice-0",
-              "text": "負数でも、左を除けば必ず和が減る",
-              "explanation": "縮めた後はsum≤limit。捨てた開始位置は後の右端でも復活しない。負数ありの [5,-4], limit=1 では5を捨てると長さ2の正解を失う。負数を含む和には別の手段を検討する。"
-            },
-            {
-              "id": "choice-1",
-              "text": "和が超えたら、左を1回除けば必ず足りる",
-              "explanation": "縮めた後はsum≤limit。捨てた開始位置は後の右端でも復活しない。負数ありの [5,-4], limit=1 では5を捨てると長さ2の正解を失う。負数を含む和には別の手段を検討する。"
-            },
-            {
-              "id": "choice-2",
-              "text": "非負なので、延長しても和は減らない",
-              "explanation": "縮めた後はsum≤limit。捨てた開始位置は後の右端でも復活しない。負数ありの [5,-4], limit=1 では5を捨てると長さ2の正解を失う。負数を含む和には別の手段を検討する。"
-            }
-          ],
-          "correctChoiceID": "choice-2",
-          "explanation": "縮めた後はsum≤limit。捨てた開始位置は後の右端でも復活しない。負数ありの [5,-4], limit=1 では5を捨てると長さ2の正解を失う。負数を含む和には別の手段を検討する。",
-          "code": null,
-          "hints": null,
-          "reference": null,
-          "check": null
-        },
-        {
-          "id": "step-4",
-          "phase": "手で動かす",
-          "title": "境界を含めて追跡する",
-          "prompt": "縮めた後は？",
-          "choices": [
-            {
-              "id": "choice-0",
-              "text": "left=2,sum=3まで縮め長さ1を評価",
-              "explanation": "2だけ除けば和4。whileで必要なだけ縮め、成立後に長さ更新。0があっても両端は後退しない。"
-            },
-            {
-              "id": "choice-1",
-              "text": "left=1,sum=4として長さ2を評価",
-              "explanation": "2だけ除けば和4。whileで必要なだけ縮め、成立後に長さ更新。0があっても両端は後退しない。"
-            },
-            {
-              "id": "choice-2",
-              "text": "left=0,sum=6のまま長さ3を評価",
-              "explanation": "2だけ除けば和4。whileで必要なだけ縮め、成立後に長さ更新。0があっても両端は後退しない。"
-            }
-          ],
-          "correctChoiceID": "choice-1",
-          "explanation": "2だけ除けば和4。whileで必要なだけ縮め、成立後に長さ更新。0があっても両端は後退しない。",
-          "code": "nums=[2,1,3,2], limit=4\nright=2 で sum=6, left=0",
-          "hints": null,
-          "reference": null,
-          "check": null
-        },
-        {
-          "id": "step-5",
-          "phase": "ヒントなしで転用",
-          "title": "別の状況でも組み立てる",
-          "prompt": "文字列から同じ文字を含まない最長の連続部分を探す。新しい文字で重複したとき、区間をどう直す？",
-          "choices": [],
-          "correctChoiceID": null,
-          "explanation": "頻度Mapと両端を持つ。追加文字が重複する間、左端の文字数を減らす。削除で重複は増えない。O(n)、文字種類数分の領域。",
-          "code": null,
-          "hints": [
-            "区間内の出現数を持つ。",
-            "重複が消えるまで左側を除く。"
-          ],
-          "reference": "for right: count[s[right]]++; while count[s[right]]>1: count[s[left++]]--; update best",
-          "check": "□ 素朴な解法から改善を説明した\n□ 保持する情報と更新条件を説明した\n□ 空・最小・境界の入力を確認した\n□ 時間と追加領域を説明した"
-        }
-      ],
-      "notes": "対応する実装問題 ID：learn-window（アルゴリズム実装カタログ）"
-    },
-    {
       "id": "learn-prefix",
       "title": "区間の和を差にする",
       "category": "アルゴリズム",
@@ -934,7 +587,16 @@
         }
       ],
       "contentVersion": "2026-10-12.2",
-      "sources": [],
+      "sources": [
+        {
+          "title": "AtCoder ABC229 D：公式解説・単調な窓の条件",
+          "url": "https://atcoder.jp/contests/abc229/editorial/2984"
+        },
+        {
+          "title": "AtCoder ABC233 D：公式解説・符号付き和と頻度",
+          "url": "https://atcoder.jp/contests/abc233/editorial/3186"
+        }
+      ],
       "estimatedDuration": "約10〜15分",
       "prerequisites": null,
       "englishPrompt": null,
@@ -1071,9 +733,648 @@
           ],
           "reference": "first={0:-1}; p=0;best=0\nfor i,x: p+=x; if first has p-target: best=max(best,i-first[p-target]); if first lacks p: first[p]=i\nreturn best",
           "check": "□ 頻度ではなく最初の位置を持つ理由を説明した\n□ 最初の位置を上書きしない\n□ 初期0→-1と空配列を確認した\n□ [2,-2,3,0]を手で追った"
+        },
+        {
+          "id": "compare-signed",
+          "phase": "条件の比較",
+          "title": "条件を変えると同じ型は使える？",
+          "prompt": "[4,-3,2]の和が3以下の最長区間を考える。単純な窓で先頭4を捨てる方法と、全体の和を比較する。次に[3,-3,3]で和がちょうど3の区間を数える。二つの目的と制約の違いを言う。",
+          "choices": [],
+          "correctChoiceID": null,
+          "explanation": "非負の値なら右に伸ばすと和は減らず、左を捨てると増えないという単調性を使える。負の値があるとこの根拠が壊れる。exact sumの個数は、現在までの累積和−Kと等しい過去の累積和の頻度で数える。",
+          "reference": "[4,-3,2]の全体の和は3で長さ3。4だけ見て捨てるとこの解を失う。\n[3,-3,3]のprefixは0,3,0,3。区間[0,1),[0,3),[2,3)の3区間が和3。\nfrequency={0:1}; total=count=0\n各xについて total+=x; count+=frequency.get(total-K,0); frequency[total]+=1。検索は登録より先。",
+          "hints": [
+            "窓を狭めれば和が必ず減る、という主張を反例で確かめる。",
+            "過去のprefixが同じ値で複数回現れる。"
+          ],
+          "check": "□ 単調性の条件 □ prefixの4セル □ 初期prefix0 □ 重複の頻度 □ 検索と登録の順序"
+        },
+        {
+          "id": "compare-longest",
+          "phase": "未誘導の転移",
+          "title": "個数を最長長さへ変えたら？",
+          "prompt": "符号付き配列で、今度は和がちょうどKの最長区間を返したい。直前のfrequencyをそのまま使うと何が足りないか。状態・更新順・トレースを自分で組み立てる。",
+          "choices": [],
+          "correctChoiceID": null,
+          "explanation": "個数なら同じprefixの頻度、最長ならそのprefixが最初に現れた境界の位置を覚える。頻度と最初の位置は別の情報。全ての添字を保持する必要はない。",
+          "reference": "境界prefix[0]=0を位置0として登録。境界iでprefix[i]−Kが過去にあれば i−earliest[prefix[i]−K] で長さを更新。現在のprefixの最初の位置は上書きしない。[3,-3,3],K=3では長さ3。",
+          "hints": [
+            "同じprefixが二度現れたら、長い区間になるのはどちらの位置？"
+          ],
+          "check": "□ 頻度と位置の違い □ 初期境界 □ 最初の位置を保持 □ 白紙実装と反例"
         }
       ],
       "notes": "対応する実装問題 ID：learn-prefix（アルゴリズム実装カタログ）"
+    },
+    {
+      "id": "learn-interval-events",
+      "title": "区間の始まりと終わりをまとめる",
+      "category": "典型の導出",
+      "summary": "各時刻を書き換える方法から、変化する端点だけを持つ方法へ。",
+      "authors": [
+        {
+          "name": "Original practice material",
+          "type": "ai-assisted"
+        }
+      ],
+      "contentVersion": "2026-10-13.2",
+      "estimatedDuration": "20–35分＋白紙実装",
+      "sources": [
+        {
+          "title": "AtCoder ABC183 D：公式問題（別問題への転移用）",
+          "url": "https://atcoder.jp/contests/abc183/tasks/abc183_d"
+        },
+        {
+          "title": "AtCoder ABC183 D：公式解説",
+          "url": "https://atcoder.jp/contests/abc183/editorial/343"
+        }
+      ],
+      "steps": [
+        {
+          "id": "constraints",
+          "phase": "制約から選ぶ",
+          "title": "どこで仕事が増える？",
+          "prompt": "作業[1,4)は負荷3、[4,6)は負荷5、[2,5)は負荷2。時刻ごとの同時負荷の最大値を求めたい。半開区間の意味を明示し、区間内の全時刻を更新する方法の仕事量を見積もる。",
+          "choices": [],
+          "correctChoiceID": null,
+          "explanation": "[s,t)はsを含みtを含まない。N区間を長さTの配列へ個別反映すると最悪O(NT)。各区間は開始と終了でしか負荷を変えない。",
+          "reference": "Nが20万、Tが20万なら全時刻を各区間で更新する方法は大きい。開始に+p、終了に−pの二つの変化を記録し、累積して同時負荷を復元できる。",
+          "hints": [
+            "負荷が変わる時刻はどこ？",
+            "半開区間なら終了時刻で負荷を取り除く。"
+          ],
+          "check": "□ 半開区間 □ 素朴な仕事量 □ 値と変化を区別"
+        },
+        {
+          "id": "trace",
+          "phase": "手でトレース",
+          "title": "4セルで復元する",
+          "prompt": "時刻1,2,4,5の4セルについて、変化量と累積負荷を自分で埋める。時刻4で終了3と開始5をどうまとめる？",
+          "choices": [],
+          "correctChoiceID": null,
+          "explanation": "同じ時刻の変化を合計してから、その時刻以降の負荷を評価する。時刻4の変化は−3+5=+2。時刻4を終わった区間にも属すると誤って扱わない。",
+          "reference": "時刻1: Δ=+3, load=3\n時刻2: Δ=+2, load=5\n時刻4: Δ=+2, load=7\n時刻5: Δ=−2, load=5\n時刻6: Δ=−5, load=0。peak=7。",
+          "hints": [
+            "端点4には二つのイベントがある。",
+            "累積値が現在の同時負荷になる。"
+          ],
+          "check": "□ 4セルの変化と累積 □ 同時端点 □ peak=7"
+        },
+        {
+          "id": "boundary",
+          "phase": "不変条件",
+          "title": "端点の順番で偽のピークを作らない",
+          "prompt": "[1,3)の負荷4と[3,5)の負荷4。peakはいくつ？ 同じ時刻の開始を足した瞬間に最大値を更新し、終了を後から引くとどうなる？",
+          "choices": [],
+          "correctChoiceID": null,
+          "explanation": "正しいpeakは4。時刻3には重なりがない。時刻ごとに差分を集約するか、終了を先に反映するルールが必要。個別イベントを恣意的な順序で評価すると一瞬8という存在しない負荷を作る。",
+          "reference": "Δ1=+4、Δ3=−4+4=0、Δ5=−4。累積のpeakは4。半開区間の契約がイベントの評価順を決める。",
+          "hints": [
+            "時刻3の直前と直後を別々に考える。"
+          ],
+          "check": "□ 同時端点の反例 □ 区間契約と順序の対応"
+        },
+        {
+          "id": "compose",
+          "phase": "疑似コードの組立",
+          "title": "端点から負荷を復元する",
+          "prompt": "イベント作成→同時端点の集約→時刻順の累積→最大値の更新を疑似コードで組み立てる。最大時刻が10^12ならどう表現を変える？",
+          "choices": [],
+          "correctChoiceID": null,
+          "explanation": "密な時刻配列はO(T)領域。巨大で疎な時刻には辞書で端点ごとの差分をまとめ、異なる端点をソートする。O(N log N)時間、O(N)領域。",
+          "reference": "events = {}\nfor s,t,p in intervals:\n  events[s] = events.get(s,0) + p\n  events[t] = events.get(t,0) - p\nload = peak = 0\nfor t in sorted(events):\n  load += events[t]\n  peak = max(peak, load)\nreturn peak",
+          "hints": [
+            "区間の中は値が一定。全ての時刻を保存する必要がない。"
+          ],
+          "check": "□ 値ではなく差分 □ 集約してから累積 □ 密と疎の計算量"
+        },
+        {
+          "id": "implement",
+          "phase": "白紙実装",
+          "title": "期待値を作ってから白紙実装",
+          "prompt": "手元でpeak_load(intervals)を実装。上の3区間、同時端点2区間、空列、巨大時刻を試す。小さい時刻に対する素朴な実装と結果を照合する。",
+          "choices": [],
+          "correctChoiceID": null,
+          "explanation": "参照解答の出力を写しただけでは実行証拠にならない。乱数で小さい区間を作り、各時刻を数える実装と比較すると端点バグを見つけやすい。",
+          "reference": "期待：3区間→7、同時端点2区間→4、空列→0。大きい時刻でも端点数が少なければ辞書方式で扱える。負荷の合計が32bitを超える場合も確認する。",
+          "hints": [
+            "比較対象の素朴な実装は小さい入力に限定する。"
+          ],
+          "check": "□ 白紙実装 □ 境界と大きな合計 □ 素朴解との照合"
+        },
+        {
+          "id": "transfer",
+          "phase": "条件を変えた類題",
+          "title": "容量の違う資源へ転用",
+          "prompt": "資源には時間帯ごとに違う容量がある。各予約の負荷と容量変更のイベントから、容量を超える時間帯を列挙したい。何を状態として累積し、どこを区間として出力する？",
+          "choices": [],
+          "correctChoiceID": null,
+          "explanation": "負荷と容量を別に累積し、隣接端点間でload>capacityならその時間帯を違反として出す。最後の端点以後を出すには終了条件の定義が必要。",
+          "reference": "予約負荷の±pと容量の変化を同じ時刻に集約する。時刻tで更新した値は[t,next_t)へ適用する。容量の初期値と負荷の初期値を明記する。",
+          "hints": [
+            "次の端点までは二つの値は変わらない。"
+          ],
+          "check": "□ 二つの状態 □ 集約順 □ 区間出力の端点 □ 初期値"
+        }
+      ],
+      "notes": "独立した演習です。参考リンクは技術の根拠または公式に公開された練習例で、企業の公式過去問ではありません。選択回答・自己評価は実装の検証済みを意味しません。"
+    },
+    {
+      "id": "window-derive",
+      "title": "連続する範囲を扱う",
+      "category": "アルゴリズム",
+      "summary": "アルゴリズム",
+      "authors": [
+        {
+          "type": "ai-assisted",
+          "name": "Original interview-practice material"
+        }
+      ],
+      "contentVersion": "2026-10-12.2",
+      "sources": [],
+      "estimatedDuration": "約10分",
+      "prerequisites": null,
+      "englishPrompt": null,
+      "originalRecordJSON": "{\n  \"id\": \"window-derive\",\n  \"name\": \"連続する範囲を扱う\",\n  \"time\": \"約10分\",\n  \"steps\": [\n    {\n      \"label\": \"まず、素朴に\",\n      \"title\": \"連続区間を全部調べる\",\n      \"prompt\": \"文字列の中で、文字が重複しない最長の連続部分文字列を探します。まず正しい素朴な方法は？\",\n      \"choices\": [\n        \"すべての開始・終了位置を試し、各区間の重複を確認する\",\n        \"文字をソートして連続性を無視する\",\n        \"文字列全体の種類数を返す\"\n      ],\n      \"answer\": 0,\n      \"why\": \"全区間は O(n²) 個。区間を毎回走査して重複確認すると O(n³)。開始位置ごとにSetを伸ばすだけでも O(n²) に改善できます。まず連続区間という条件を守ることが大切です。\"\n    },\n    {\n      \"label\": \"重複する仕事\",\n      \"title\": \"隣の区間はほとんど同じ\",\n      \"prompt\": \"右端を1文字伸ばしたとき、前の区間から変わる情報は少しだけです。重複が現れたとき、何をすれば有効な連続区間へ戻せますか？\",\n      \"choices\": [\n        \"毎回文字列の先頭から再計算する\",\n        \"左端を右へ動かし、重複がなくなるまで取り除く\",\n        \"左端を必ず0に戻す\"\n      ],\n      \"answer\": 1,\n      \"why\": \"現在の区間の文字情報を維持し、右端に追加、必要なら左端から削除します。両端が後戻りしなければ、各文字の追加・削除は高々1回ずつです。\"\n    },\n    {\n      \"label\": \"型と使える条件\",\n      \"title\": \"窓を縮める根拠は？\",\n      \"prompt\": \"この問題で sliding window が使える根拠は？\",\n      \"choices\": [\n        \"すべての配列問題は窓で解ける\",\n        \"重複のない区間は、左から文字を除いても重複が増えない\",\n        \"値をソートすれば連続性を保てる\"\n      ],\n      \"answer\": 1,\n      \"why\": \"有効な窓を保ちながら端を動かせる性質を使います。「連続している」だけでは十分ではありません。例えば負数を含む配列の和では、右へ伸ばすと和が増えるとは限らず、大小だけで端を動かす方法は一般には成立しません。\"\n    },\n    {\n      \"label\": \"手で動かす\",\n      \"title\": \"窓の外の重複は気にしない\",\n      \"code\": \"s = \\\"abba\\\"\\ni=2 の b を処理後: left=2, 窓=\\\"b\\\"\\ni=3 の a: 前のaは位置0\",\n      \"prompt\": \"最後の a の処理で left はどこ？\",\n      \"choices\": [\n        \"0\",\n        \"1\",\n        \"2\"\n      ],\n      \"answer\": 2,\n      \"why\": \"前のaは窓の外です。left = max(left, last[a]+1) = max(2,1) = 2。左端を戻さず、窓 \\\"ba\\\" の長さは2。\\\"bba\\\" を誤って数えないようにします。\"\n    },\n    {\n      \"label\": \"ヒントなしで転用\",\n      \"title\": \"条件を変えて考える\",\n      \"prompt\": \"正整数だけの処理時間配列 [2,1,3,2] がある。合計が4以下の最長連続区間の長さを求めたい（答え2）。入力はすべて正整数。保持する情報、追加する条件、縮める条件を説明してください。\",\n      \"transfer\": true,\n      \"hints\": [\n        \"毎回区間の和を計算せず、現在の和を更新できる？\",\n        \"右端を追加して和が4を超えたら、左端の値を引く。正整数という条件がなぜ重要？\"\n      ],\n      \"why\": \"左右の端と現在の和を保持。右端を加え、和が4を超える間は左端を引いて進める。有効になった窓の長さで最大値を更新。各端が高々n回進むので時間 O(n)、領域 O(1)。負数を許すとこの方針は一般に壊れます。\",\n      \"reference\": \"left=0, sum=0, best=0\\nfor right in positions:\\n  sum += a[right]\\n  while sum > 4:\\n    sum -= a[left]; left += 1\\n  best = max(best, right-left+1)\",\n      \"check\": \"□ 和を差分更新した\\n□ whileで必要なだけ縮めた\\n□ 正整数という前提を説明した\"\n    }\n  ],\n  \"category\": \"intro\",\n  \"contentVersion\": \"2026-10-12.2\",\n  \"authors\": [\n    {\n      \"type\": \"ai-assisted\",\n      \"name\": \"Original interview-practice material\"\n    }\n  ],\n  \"sources\": []\n}",
+      "steps": [
+        {
+          "id": "step-1",
+          "phase": "まず、素朴に",
+          "title": "連続区間を全部調べる",
+          "prompt": "文字列の中で、文字が重複しない最長の連続部分文字列を探します。まず正しい素朴な方法は？",
+          "choices": [
+            {
+              "id": "choice-0",
+              "text": "すべての開始・終了位置を試し、各区間の重複を確認する",
+              "explanation": "全区間は O(n²) 個。区間を毎回走査して重複確認すると O(n³)。開始位置ごとにSetを伸ばすだけでも O(n²) に改善できます。まず連続区間という条件を守ることが大切です。"
+            },
+            {
+              "id": "choice-1",
+              "text": "文字をソートして連続性を無視する",
+              "explanation": "全区間は O(n²) 個。区間を毎回走査して重複確認すると O(n³)。開始位置ごとにSetを伸ばすだけでも O(n²) に改善できます。まず連続区間という条件を守ることが大切です。"
+            },
+            {
+              "id": "choice-2",
+              "text": "文字列全体の種類数を返す",
+              "explanation": "全区間は O(n²) 個。区間を毎回走査して重複確認すると O(n³)。開始位置ごとにSetを伸ばすだけでも O(n²) に改善できます。まず連続区間という条件を守ることが大切です。"
+            }
+          ],
+          "correctChoiceID": "choice-0",
+          "explanation": "全区間は O(n²) 個。区間を毎回走査して重複確認すると O(n³)。開始位置ごとにSetを伸ばすだけでも O(n²) に改善できます。まず連続区間という条件を守ることが大切です。",
+          "code": null,
+          "hints": null,
+          "reference": null,
+          "check": null
+        },
+        {
+          "id": "step-2",
+          "phase": "重複する仕事",
+          "title": "隣の区間はほとんど同じ",
+          "prompt": "右端を1文字伸ばしたとき、前の区間から変わる情報は少しだけです。重複が現れたとき、何をすれば有効な連続区間へ戻せますか？",
+          "choices": [
+            {
+              "id": "choice-0",
+              "text": "毎回文字列の先頭から再計算する",
+              "explanation": "現在の区間の文字情報を維持し、右端に追加、必要なら左端から削除します。両端が後戻りしなければ、各文字の追加・削除は高々1回ずつです。"
+            },
+            {
+              "id": "choice-1",
+              "text": "左端を右へ動かし、重複がなくなるまで取り除く",
+              "explanation": "現在の区間の文字情報を維持し、右端に追加、必要なら左端から削除します。両端が後戻りしなければ、各文字の追加・削除は高々1回ずつです。"
+            },
+            {
+              "id": "choice-2",
+              "text": "左端を必ず0に戻す",
+              "explanation": "現在の区間の文字情報を維持し、右端に追加、必要なら左端から削除します。両端が後戻りしなければ、各文字の追加・削除は高々1回ずつです。"
+            }
+          ],
+          "correctChoiceID": "choice-1",
+          "explanation": "現在の区間の文字情報を維持し、右端に追加、必要なら左端から削除します。両端が後戻りしなければ、各文字の追加・削除は高々1回ずつです。",
+          "code": null,
+          "hints": null,
+          "reference": null,
+          "check": null
+        },
+        {
+          "id": "step-3",
+          "phase": "型と使える条件",
+          "title": "窓を縮める根拠は？",
+          "prompt": "この問題で sliding window が使える根拠は？",
+          "choices": [
+            {
+              "id": "choice-0",
+              "text": "すべての配列問題は窓で解ける",
+              "explanation": "有効な窓を保ちながら端を動かせる性質を使います。「連続している」だけでは十分ではありません。例えば負数を含む配列の和では、右へ伸ばすと和が増えるとは限らず、大小だけで端を動かす方法は一般には成立しません。"
+            },
+            {
+              "id": "choice-1",
+              "text": "重複のない区間は、左から文字を除いても重複が増えない",
+              "explanation": "有効な窓を保ちながら端を動かせる性質を使います。「連続している」だけでは十分ではありません。例えば負数を含む配列の和では、右へ伸ばすと和が増えるとは限らず、大小だけで端を動かす方法は一般には成立しません。"
+            },
+            {
+              "id": "choice-2",
+              "text": "値をソートすれば連続性を保てる",
+              "explanation": "有効な窓を保ちながら端を動かせる性質を使います。「連続している」だけでは十分ではありません。例えば負数を含む配列の和では、右へ伸ばすと和が増えるとは限らず、大小だけで端を動かす方法は一般には成立しません。"
+            }
+          ],
+          "correctChoiceID": "choice-1",
+          "explanation": "有効な窓を保ちながら端を動かせる性質を使います。「連続している」だけでは十分ではありません。例えば負数を含む配列の和では、右へ伸ばすと和が増えるとは限らず、大小だけで端を動かす方法は一般には成立しません。",
+          "code": null,
+          "hints": null,
+          "reference": null,
+          "check": null
+        },
+        {
+          "id": "step-4",
+          "phase": "手で動かす",
+          "title": "窓の外の重複は気にしない",
+          "prompt": "最後の a の処理で left はどこ？",
+          "choices": [
+            {
+              "id": "choice-0",
+              "text": "0",
+              "explanation": "前のaは窓の外です。left = max(left, last[a]+1) = max(2,1) = 2。左端を戻さず、窓 \"ba\" の長さは2。\"bba\" を誤って数えないようにします。"
+            },
+            {
+              "id": "choice-1",
+              "text": "1",
+              "explanation": "前のaは窓の外です。left = max(left, last[a]+1) = max(2,1) = 2。左端を戻さず、窓 \"ba\" の長さは2。\"bba\" を誤って数えないようにします。"
+            },
+            {
+              "id": "choice-2",
+              "text": "2",
+              "explanation": "前のaは窓の外です。left = max(left, last[a]+1) = max(2,1) = 2。左端を戻さず、窓 \"ba\" の長さは2。\"bba\" を誤って数えないようにします。"
+            }
+          ],
+          "correctChoiceID": "choice-2",
+          "explanation": "前のaは窓の外です。left = max(left, last[a]+1) = max(2,1) = 2。左端を戻さず、窓 \"ba\" の長さは2。\"bba\" を誤って数えないようにします。",
+          "code": "s = \"abba\"\ni=2 の b を処理後: left=2, 窓=\"b\"\ni=3 の a: 前のaは位置0",
+          "hints": null,
+          "reference": null,
+          "check": null
+        },
+        {
+          "id": "step-5",
+          "phase": "ヒントなしで転用",
+          "title": "条件を変えて考える",
+          "prompt": "正整数だけの処理時間配列 [2,1,3,2] がある。合計が4以下の最長連続区間の長さを求めたい（答え2）。入力はすべて正整数。保持する情報、追加する条件、縮める条件を説明してください。",
+          "choices": [],
+          "correctChoiceID": null,
+          "explanation": "左右の端と現在の和を保持。右端を加え、和が4を超える間は左端を引いて進める。有効になった窓の長さで最大値を更新。各端が高々n回進むので時間 O(n)、領域 O(1)。負数を許すとこの方針は一般に壊れます。",
+          "code": null,
+          "hints": [
+            "毎回区間の和を計算せず、現在の和を更新できる？",
+            "右端を追加して和が4を超えたら、左端の値を引く。正整数という条件がなぜ重要？"
+          ],
+          "reference": "left=0, sum=0, best=0\nfor right in positions:\n  sum += a[right]\n  while sum > 4:\n    sum -= a[left]; left += 1\n  best = max(best, right-left+1)",
+          "check": "□ 和を差分更新した\n□ whileで必要なだけ縮めた\n□ 正整数という前提を説明した"
+        }
+      ],
+      "notes": ""
+    },
+    {
+      "id": "learn-window",
+      "title": "連続区間を保つ",
+      "category": "アルゴリズム",
+      "summary": "Sliding window",
+      "authors": [
+        {
+          "type": "ai-assisted",
+          "name": "Original interview-practice material"
+        }
+      ],
+      "contentVersion": "2026-10-12.2",
+      "sources": [
+        {
+          "title": "AtCoder ABC229 D：公式解説・単調な窓の条件",
+          "url": "https://atcoder.jp/contests/abc229/editorial/2984"
+        },
+        {
+          "title": "AtCoder ABC233 D：公式解説・符号付き和と頻度",
+          "url": "https://atcoder.jp/contests/abc233/editorial/3186"
+        }
+      ],
+      "estimatedDuration": "約10〜15分",
+      "prerequisites": null,
+      "englishPrompt": null,
+      "originalRecordJSON": "{\n  \"id\": \"learn-window\",\n  \"name\": \"連続区間を保つ\",\n  \"time\": \"約10〜15分\",\n  \"pattern\": \"Sliding window\",\n  \"problemId\": \"learn-window\",\n  \"steps\": [\n    {\n      \"label\": \"まず、素朴に\",\n      \"title\": \"正しさを先に作る\",\n      \"prompt\": \"連続区間の最長を安全に求めるには？\",\n      \"choices\": [\n        \"ソートしてから連続区間の和を調べる\",\n        \"開始ごとに終了を伸ばし和を調べる\",\n        \"区間の和が超えたら右端だけを戻す\"\n      ],\n      \"answer\": 1,\n      \"why\": \"区間の和を差分更新しても全区間がO(n²)個。ソートや途中の削除は元の連続性を壊す。\"\n    },\n    {\n      \"label\": \"重複する仕事\",\n      \"title\": \"どの仕事を減らせる？\",\n      \"prompt\": \"右端を1つ追加したとき、和を毎回計算し直す必要は？\",\n      \"choices\": [\n        \"追加分を足し、除いた左端を引く\",\n        \"追加分を足し、超えたら和を0へ戻す\",\n        \"追加分を足し、超えたら最大要素を引く\"\n      ],\n      \"answer\": 0,\n      \"why\": \"隣り合う区間は大部分を共有する。和と両端を保持すれば差分更新できる。\"\n    },\n    {\n      \"label\": \"条件と不変条件\",\n      \"title\": \"この道具を選ぶ根拠\",\n      \"prompt\": \"和がlimitを超えたら左端を捨ててよい根拠は？\",\n      \"choices\": [\n        \"負数でも、左を除けば必ず和が減る\",\n        \"和が超えたら、左を1回除けば必ず足りる\",\n        \"非負なので、延長しても和は減らない\"\n      ],\n      \"answer\": 2,\n      \"why\": \"縮めた後はsum≤limit。捨てた開始位置は後の右端でも復活しない。負数ありの [5,-4], limit=1 では5を捨てると長さ2の正解を失う。負数を含む和には別の手段を検討する。\"\n    },\n    {\n      \"label\": \"手で動かす\",\n      \"title\": \"境界を含めて追跡する\",\n      \"code\": \"nums=[2,1,3,2], limit=4\\nright=2 で sum=6, left=0\",\n      \"prompt\": \"縮めた後は？\",\n      \"choices\": [\n        \"left=2,sum=3まで縮め長さ1を評価\",\n        \"left=1,sum=4として長さ2を評価\",\n        \"left=0,sum=6のまま長さ3を評価\"\n      ],\n      \"answer\": 1,\n      \"why\": \"2だけ除けば和4。whileで必要なだけ縮め、成立後に長さ更新。0があっても両端は後退しない。\"\n    },\n    {\n      \"label\": \"ヒントなしで転用\",\n      \"title\": \"別の状況でも組み立てる\",\n      \"prompt\": \"文字列から同じ文字を含まない最長の連続部分を探す。新しい文字で重複したとき、区間をどう直す？\",\n      \"transfer\": true,\n      \"hints\": [\n        \"区間内の出現数を持つ。\",\n        \"重複が消えるまで左側を除く。\"\n      ],\n      \"why\": \"頻度Mapと両端を持つ。追加文字が重複する間、左端の文字数を減らす。削除で重複は増えない。O(n)、文字種類数分の領域。\",\n      \"reference\": \"for right: count[s[right]]++; while count[s[right]]>1: count[s[left++]]--; update best\",\n      \"check\": \"□ 素朴な解法から改善を説明した\\n□ 保持する情報と更新条件を説明した\\n□ 空・最小・境界の入力を確認した\\n□ 時間と追加領域を説明した\"\n    }\n  ],\n  \"implementationId\": \"learn-window\",\n  \"category\": \"algorithm\",\n  \"contentVersion\": \"2026-10-12.2\",\n  \"authors\": [\n    {\n      \"type\": \"ai-assisted\",\n      \"name\": \"Original interview-practice material\"\n    }\n  ],\n  \"sources\": []\n}",
+      "steps": [
+        {
+          "id": "step-1",
+          "phase": "まず、素朴に",
+          "title": "正しさを先に作る",
+          "prompt": "連続区間の最長を安全に求めるには？",
+          "choices": [
+            {
+              "id": "choice-0",
+              "text": "ソートしてから連続区間の和を調べる",
+              "explanation": "区間の和を差分更新しても全区間がO(n²)個。ソートや途中の削除は元の連続性を壊す。"
+            },
+            {
+              "id": "choice-1",
+              "text": "開始ごとに終了を伸ばし和を調べる",
+              "explanation": "区間の和を差分更新しても全区間がO(n²)個。ソートや途中の削除は元の連続性を壊す。"
+            },
+            {
+              "id": "choice-2",
+              "text": "区間の和が超えたら右端だけを戻す",
+              "explanation": "区間の和を差分更新しても全区間がO(n²)個。ソートや途中の削除は元の連続性を壊す。"
+            }
+          ],
+          "correctChoiceID": "choice-1",
+          "explanation": "区間の和を差分更新しても全区間がO(n²)個。ソートや途中の削除は元の連続性を壊す。",
+          "code": null,
+          "hints": null,
+          "reference": null,
+          "check": null
+        },
+        {
+          "id": "step-2",
+          "phase": "重複する仕事",
+          "title": "どの仕事を減らせる？",
+          "prompt": "右端を1つ追加したとき、和を毎回計算し直す必要は？",
+          "choices": [
+            {
+              "id": "choice-0",
+              "text": "追加分を足し、除いた左端を引く",
+              "explanation": "隣り合う区間は大部分を共有する。和と両端を保持すれば差分更新できる。"
+            },
+            {
+              "id": "choice-1",
+              "text": "追加分を足し、超えたら和を0へ戻す",
+              "explanation": "隣り合う区間は大部分を共有する。和と両端を保持すれば差分更新できる。"
+            },
+            {
+              "id": "choice-2",
+              "text": "追加分を足し、超えたら最大要素を引く",
+              "explanation": "隣り合う区間は大部分を共有する。和と両端を保持すれば差分更新できる。"
+            }
+          ],
+          "correctChoiceID": "choice-0",
+          "explanation": "隣り合う区間は大部分を共有する。和と両端を保持すれば差分更新できる。",
+          "code": null,
+          "hints": null,
+          "reference": null,
+          "check": null
+        },
+        {
+          "id": "step-3",
+          "phase": "条件と不変条件",
+          "title": "この道具を選ぶ根拠",
+          "prompt": "和がlimitを超えたら左端を捨ててよい根拠は？",
+          "choices": [
+            {
+              "id": "choice-0",
+              "text": "負数でも、左を除けば必ず和が減る",
+              "explanation": "縮めた後はsum≤limit。捨てた開始位置は後の右端でも復活しない。負数ありの [5,-4], limit=1 では5を捨てると長さ2の正解を失う。負数を含む和には別の手段を検討する。"
+            },
+            {
+              "id": "choice-1",
+              "text": "和が超えたら、左を1回除けば必ず足りる",
+              "explanation": "縮めた後はsum≤limit。捨てた開始位置は後の右端でも復活しない。負数ありの [5,-4], limit=1 では5を捨てると長さ2の正解を失う。負数を含む和には別の手段を検討する。"
+            },
+            {
+              "id": "choice-2",
+              "text": "非負なので、延長しても和は減らない",
+              "explanation": "縮めた後はsum≤limit。捨てた開始位置は後の右端でも復活しない。負数ありの [5,-4], limit=1 では5を捨てると長さ2の正解を失う。負数を含む和には別の手段を検討する。"
+            }
+          ],
+          "correctChoiceID": "choice-2",
+          "explanation": "縮めた後はsum≤limit。捨てた開始位置は後の右端でも復活しない。負数ありの [5,-4], limit=1 では5を捨てると長さ2の正解を失う。負数を含む和には別の手段を検討する。",
+          "code": null,
+          "hints": null,
+          "reference": null,
+          "check": null
+        },
+        {
+          "id": "step-4",
+          "phase": "手で動かす",
+          "title": "境界を含めて追跡する",
+          "prompt": "縮めた後は？",
+          "choices": [
+            {
+              "id": "choice-0",
+              "text": "left=2,sum=3まで縮め長さ1を評価",
+              "explanation": "2だけ除けば和4。whileで必要なだけ縮め、成立後に長さ更新。0があっても両端は後退しない。"
+            },
+            {
+              "id": "choice-1",
+              "text": "left=1,sum=4として長さ2を評価",
+              "explanation": "2だけ除けば和4。whileで必要なだけ縮め、成立後に長さ更新。0があっても両端は後退しない。"
+            },
+            {
+              "id": "choice-2",
+              "text": "left=0,sum=6のまま長さ3を評価",
+              "explanation": "2だけ除けば和4。whileで必要なだけ縮め、成立後に長さ更新。0があっても両端は後退しない。"
+            }
+          ],
+          "correctChoiceID": "choice-1",
+          "explanation": "2だけ除けば和4。whileで必要なだけ縮め、成立後に長さ更新。0があっても両端は後退しない。",
+          "code": "nums=[2,1,3,2], limit=4\nright=2 で sum=6, left=0",
+          "hints": null,
+          "reference": null,
+          "check": null
+        },
+        {
+          "id": "step-5",
+          "phase": "ヒントなしで転用",
+          "title": "別の状況でも組み立てる",
+          "prompt": "文字列から同じ文字を含まない最長の連続部分を探す。新しい文字で重複したとき、区間をどう直す？",
+          "choices": [],
+          "correctChoiceID": null,
+          "explanation": "頻度Mapと両端を持つ。追加文字が重複する間、左端の文字数を減らす。削除で重複は増えない。O(n)、文字種類数分の領域。",
+          "code": null,
+          "hints": [
+            "区間内の出現数を持つ。",
+            "重複が消えるまで左側を除く。"
+          ],
+          "reference": "for right: count[s[right]]++; while count[s[right]]>1: count[s[left++]]--; update best",
+          "check": "□ 素朴な解法から改善を説明した\n□ 保持する情報と更新条件を説明した\n□ 空・最小・境界の入力を確認した\n□ 時間と追加領域を説明した"
+        },
+        {
+          "id": "compare-signed",
+          "phase": "条件の比較",
+          "title": "条件を変えると同じ型は使える？",
+          "prompt": "[4,-3,2]の和が3以下の最長区間を考える。単純な窓で先頭4を捨てる方法と、全体の和を比較する。次に[3,-3,3]で和がちょうど3の区間を数える。二つの目的と制約の違いを言う。",
+          "choices": [],
+          "correctChoiceID": null,
+          "explanation": "非負の値なら右に伸ばすと和は減らず、左を捨てると増えないという単調性を使える。負の値があるとこの根拠が壊れる。exact sumの個数は、現在までの累積和−Kと等しい過去の累積和の頻度で数える。",
+          "reference": "[4,-3,2]の全体の和は3で長さ3。4だけ見て捨てるとこの解を失う。\n[3,-3,3]のprefixは0,3,0,3。区間[0,1),[0,3),[2,3)の3区間が和3。\nfrequency={0:1}; total=count=0\n各xについて total+=x; count+=frequency.get(total-K,0); frequency[total]+=1。検索は登録より先。",
+          "hints": [
+            "窓を狭めれば和が必ず減る、という主張を反例で確かめる。",
+            "過去のprefixが同じ値で複数回現れる。"
+          ],
+          "check": "□ 単調性の条件 □ prefixの4セル □ 初期prefix0 □ 重複の頻度 □ 検索と登録の順序"
+        },
+        {
+          "id": "compare-longest",
+          "phase": "未誘導の転移",
+          "title": "個数を最長長さへ変えたら？",
+          "prompt": "符号付き配列で、今度は和がちょうどKの最長区間を返したい。直前のfrequencyをそのまま使うと何が足りないか。状態・更新順・トレースを自分で組み立てる。",
+          "choices": [],
+          "correctChoiceID": null,
+          "explanation": "個数なら同じprefixの頻度、最長ならそのprefixが最初に現れた境界の位置を覚える。頻度と最初の位置は別の情報。全ての添字を保持する必要はない。",
+          "reference": "境界prefix[0]=0を位置0として登録。境界iでprefix[i]−Kが過去にあれば i−earliest[prefix[i]−K] で長さを更新。現在のprefixの最初の位置は上書きしない。[3,-3,3],K=3では長さ3。",
+          "hints": [
+            "同じprefixが二度現れたら、長い区間になるのはどちらの位置？"
+          ],
+          "check": "□ 頻度と位置の違い □ 初期境界 □ 最初の位置を保持 □ 白紙実装と反例"
+        }
+      ],
+      "notes": "対応する実装問題 ID：learn-window（アルゴリズム実装カタログ）"
+    },
+    {
+      "id": "boundary",
+      "title": "境界を見つける",
+      "category": "アルゴリズム",
+      "summary": "アルゴリズム",
+      "authors": [
+        {
+          "type": "ai-assisted",
+          "name": "Original interview-practice material"
+        }
+      ],
+      "contentVersion": "2026-10-12.2",
+      "sources": [],
+      "estimatedDuration": "約8分",
+      "prerequisites": null,
+      "englishPrompt": null,
+      "originalRecordJSON": "{\n  \"id\": \"boundary\",\n  \"name\": \"境界を見つける\",\n  \"time\": \"約8分\",\n  \"steps\": [\n    {\n      \"label\": \"まず、素朴に\",\n      \"title\": \"最初の条件成立を探す\",\n      \"prompt\": \"昇順配列 [1,3,3,8] で、3以上となる最初の位置を探したい。単純で正しい方法は？\",\n      \"choices\": [\n        \"先頭から条件を満たすまで順に見る\",\n        \"中央の位置を常に返す\",\n        \"最後の要素だけ見る\"\n      ],\n      \"answer\": 0,\n      \"why\": \"左から線形探索すれば O(n) で見つかります。存在しなければ配列長を返す、という出力条件も先に決めましょう。\"\n    },\n    {\n      \"label\": \"省ける仕事\",\n      \"title\": \"確認しなくてよい半分\",\n      \"prompt\": \"中央の値が target より小さかった。昇順という条件から何が分かる？\",\n      \"choices\": [\n        \"中央より左も含めて答えにならない\",\n        \"中央より右はすべて答えにならない\",\n        \"全要素を確認し直す必要がある\"\n      ],\n      \"answer\": 0,\n      \"why\": \"中央以下の位置の値はすべて target 未満。左半分と中央をまとめて除外できます。これが毎回1件ずつ見る仕事を減らす根拠です。\"\n    },\n    {\n      \"label\": \"不変条件を選ぶ\",\n      \"title\": \"境界はどこに残す？\",\n      \"prompt\": \"[lo,hi) を未確定範囲とする lower_bound。a[mid] >= target のとき、最初の成立位置を捨てない更新は？\",\n      \"choices\": [\n        \"lo = mid + 1\",\n        \"hi = mid\",\n        \"hi = mid - 1\"\n      ],\n      \"answer\": 1,\n      \"why\": \"mid 自身が境界候補です。hi=mid として答えの候補を境界に保持します。述語 a[i]>=target が false…false,true…true と単調なので二分探索できます。任意の未ソート配列にはそのまま使えません。\"\n    },\n    {\n      \"label\": \"手で動かす\",\n      \"title\": \"要素が1つでも止まる？\",\n      \"code\": \"a=[2], target=3\\nlo=0, hi=1\\nmid=0 → a[mid] < target\",\n      \"prompt\": \"次の lo, hi と返り値は？\",\n      \"choices\": [\n        \"lo=0, hi=1、返り値0\",\n        \"lo=1, hi=1、返り値1\",\n        \"lo=0, hi=0、返り値0\"\n      ],\n      \"answer\": 1,\n      \"why\": \"lo=mid+1=1。lo==hi で終了し、配列長1を返します。lo=mid では範囲が縮まず無限ループになります。毎回範囲が縮むことを確認しましょう。\"\n    },\n    {\n      \"label\": \"ヒントなしで転用\",\n      \"title\": \"配列ではなく判定関数\",\n      \"prompt\": \"バージョン1〜nについて isBad(v) を呼べる。ある版以降はすべて不良、それより前は正常。不良がなければ n+1 を返したい。呼び出し回数を減らすには？ 保つ範囲と更新を説明してください。\",\n      \"transfer\": true,\n      \"hints\": [\n        \"判定結果は false の列のあとに true の列が続きます。最初のtrueを探せる？\",\n        \"lo=1, hi=n+1 と置き、mid≤n の範囲だけ isBad を呼ぶ形を考える。\"\n      ],\n      \"why\": \"lo=1, hi=n+1。lo<hi の間、mid=floor((lo+hi)/2)。isBad(mid) がtrueなら hi=mid、falseなら lo=mid+1。ループ内のmidは常にn以下なので番兵n+1を呼ばずに済みます。O(log n) 回の判定。\",\n      \"reference\": \"lo=1; hi=n+1\\nwhile lo < hi:\\n  mid=floor((lo+hi)/2)\\n  if isBad(mid): hi=mid\\n  else: lo=mid+1\\nreturn lo\",\n      \"check\": \"□ 単調性を前提にした\\n□ 不良なしでn+1を返す\\n□ 毎回区間が縮む\"\n    }\n  ],\n  \"category\": \"intro\",\n  \"contentVersion\": \"2026-10-12.2\",\n  \"authors\": [\n    {\n      \"type\": \"ai-assisted\",\n      \"name\": \"Original interview-practice material\"\n    }\n  ],\n  \"sources\": []\n}",
+      "steps": [
+        {
+          "id": "step-1",
+          "phase": "まず、素朴に",
+          "title": "最初の条件成立を探す",
+          "prompt": "昇順配列 [1,3,3,8] で、3以上となる最初の位置を探したい。単純で正しい方法は？",
+          "choices": [
+            {
+              "id": "choice-0",
+              "text": "先頭から条件を満たすまで順に見る",
+              "explanation": "左から線形探索すれば O(n) で見つかります。存在しなければ配列長を返す、という出力条件も先に決めましょう。"
+            },
+            {
+              "id": "choice-1",
+              "text": "中央の位置を常に返す",
+              "explanation": "左から線形探索すれば O(n) で見つかります。存在しなければ配列長を返す、という出力条件も先に決めましょう。"
+            },
+            {
+              "id": "choice-2",
+              "text": "最後の要素だけ見る",
+              "explanation": "左から線形探索すれば O(n) で見つかります。存在しなければ配列長を返す、という出力条件も先に決めましょう。"
+            }
+          ],
+          "correctChoiceID": "choice-0",
+          "explanation": "左から線形探索すれば O(n) で見つかります。存在しなければ配列長を返す、という出力条件も先に決めましょう。",
+          "code": null,
+          "hints": null,
+          "reference": null,
+          "check": null
+        },
+        {
+          "id": "step-2",
+          "phase": "省ける仕事",
+          "title": "確認しなくてよい半分",
+          "prompt": "中央の値が target より小さかった。昇順という条件から何が分かる？",
+          "choices": [
+            {
+              "id": "choice-0",
+              "text": "中央より左も含めて答えにならない",
+              "explanation": "中央以下の位置の値はすべて target 未満。左半分と中央をまとめて除外できます。これが毎回1件ずつ見る仕事を減らす根拠です。"
+            },
+            {
+              "id": "choice-1",
+              "text": "中央より右はすべて答えにならない",
+              "explanation": "中央以下の位置の値はすべて target 未満。左半分と中央をまとめて除外できます。これが毎回1件ずつ見る仕事を減らす根拠です。"
+            },
+            {
+              "id": "choice-2",
+              "text": "全要素を確認し直す必要がある",
+              "explanation": "中央以下の位置の値はすべて target 未満。左半分と中央をまとめて除外できます。これが毎回1件ずつ見る仕事を減らす根拠です。"
+            }
+          ],
+          "correctChoiceID": "choice-0",
+          "explanation": "中央以下の位置の値はすべて target 未満。左半分と中央をまとめて除外できます。これが毎回1件ずつ見る仕事を減らす根拠です。",
+          "code": null,
+          "hints": null,
+          "reference": null,
+          "check": null
+        },
+        {
+          "id": "step-3",
+          "phase": "不変条件を選ぶ",
+          "title": "境界はどこに残す？",
+          "prompt": "[lo,hi) を未確定範囲とする lower_bound。a[mid] >= target のとき、最初の成立位置を捨てない更新は？",
+          "choices": [
+            {
+              "id": "choice-0",
+              "text": "lo = mid + 1",
+              "explanation": "mid 自身が境界候補です。hi=mid として答えの候補を境界に保持します。述語 a[i]>=target が false…false,true…true と単調なので二分探索できます。任意の未ソート配列にはそのまま使えません。"
+            },
+            {
+              "id": "choice-1",
+              "text": "hi = mid",
+              "explanation": "mid 自身が境界候補です。hi=mid として答えの候補を境界に保持します。述語 a[i]>=target が false…false,true…true と単調なので二分探索できます。任意の未ソート配列にはそのまま使えません。"
+            },
+            {
+              "id": "choice-2",
+              "text": "hi = mid - 1",
+              "explanation": "mid 自身が境界候補です。hi=mid として答えの候補を境界に保持します。述語 a[i]>=target が false…false,true…true と単調なので二分探索できます。任意の未ソート配列にはそのまま使えません。"
+            }
+          ],
+          "correctChoiceID": "choice-1",
+          "explanation": "mid 自身が境界候補です。hi=mid として答えの候補を境界に保持します。述語 a[i]>=target が false…false,true…true と単調なので二分探索できます。任意の未ソート配列にはそのまま使えません。",
+          "code": null,
+          "hints": null,
+          "reference": null,
+          "check": null
+        },
+        {
+          "id": "step-4",
+          "phase": "手で動かす",
+          "title": "要素が1つでも止まる？",
+          "prompt": "次の lo, hi と返り値は？",
+          "choices": [
+            {
+              "id": "choice-0",
+              "text": "lo=0, hi=1、返り値0",
+              "explanation": "lo=mid+1=1。lo==hi で終了し、配列長1を返します。lo=mid では範囲が縮まず無限ループになります。毎回範囲が縮むことを確認しましょう。"
+            },
+            {
+              "id": "choice-1",
+              "text": "lo=1, hi=1、返り値1",
+              "explanation": "lo=mid+1=1。lo==hi で終了し、配列長1を返します。lo=mid では範囲が縮まず無限ループになります。毎回範囲が縮むことを確認しましょう。"
+            },
+            {
+              "id": "choice-2",
+              "text": "lo=0, hi=0、返り値0",
+              "explanation": "lo=mid+1=1。lo==hi で終了し、配列長1を返します。lo=mid では範囲が縮まず無限ループになります。毎回範囲が縮むことを確認しましょう。"
+            }
+          ],
+          "correctChoiceID": "choice-1",
+          "explanation": "lo=mid+1=1。lo==hi で終了し、配列長1を返します。lo=mid では範囲が縮まず無限ループになります。毎回範囲が縮むことを確認しましょう。",
+          "code": "a=[2], target=3\nlo=0, hi=1\nmid=0 → a[mid] < target",
+          "hints": null,
+          "reference": null,
+          "check": null
+        },
+        {
+          "id": "step-5",
+          "phase": "ヒントなしで転用",
+          "title": "配列ではなく判定関数",
+          "prompt": "バージョン1〜nについて isBad(v) を呼べる。ある版以降はすべて不良、それより前は正常。不良がなければ n+1 を返したい。呼び出し回数を減らすには？ 保つ範囲と更新を説明してください。",
+          "choices": [],
+          "correctChoiceID": null,
+          "explanation": "lo=1, hi=n+1。lo<hi の間、mid=floor((lo+hi)/2)。isBad(mid) がtrueなら hi=mid、falseなら lo=mid+1。ループ内のmidは常にn以下なので番兵n+1を呼ばずに済みます。O(log n) 回の判定。",
+          "code": null,
+          "hints": [
+            "判定結果は false の列のあとに true の列が続きます。最初のtrueを探せる？",
+            "lo=1, hi=n+1 と置き、mid≤n の範囲だけ isBad を呼ぶ形を考える。"
+          ],
+          "reference": "lo=1; hi=n+1\nwhile lo < hi:\n  mid=floor((lo+hi)/2)\n  if isBad(mid): hi=mid\n  else: lo=mid+1\nreturn lo",
+          "check": "□ 単調性を前提にした\n□ 不良なしでn+1を返す\n□ 毎回区間が縮む"
+        }
+      ],
+      "notes": ""
     },
     {
       "id": "learn-binary",
@@ -1227,6 +1528,312 @@
         }
       ],
       "notes": "対応する実装問題 ID：learn-binary（アルゴリズム実装カタログ）"
+    },
+    {
+      "id": "learn-greedy",
+      "title": "安全な選択を証明する",
+      "category": "アルゴリズム",
+      "summary": "Greedy / intervals",
+      "authors": [
+        {
+          "type": "ai-assisted",
+          "name": "Original interview-practice material"
+        }
+      ],
+      "contentVersion": "2026-10-12.2",
+      "sources": [],
+      "estimatedDuration": "約10〜15分",
+      "prerequisites": null,
+      "englishPrompt": null,
+      "originalRecordJSON": "{\n  \"id\": \"learn-greedy\",\n  \"name\": \"安全な選択を証明する\",\n  \"time\": \"約10〜15分\",\n  \"pattern\": \"Greedy / intervals\",\n  \"problemId\": \"learn-greedy\",\n  \"steps\": [\n    {\n      \"label\": \"まず、素朴に\",\n      \"title\": \"正しさを先に作る\",\n      \"prompt\": \"最大件数を確実に求めるなら？\",\n      \"choices\": [\n        \"開始順に選び、重なるものを除外\",\n        \"長さ順に選び、重なるものを除外\",\n        \"全ての部分集合を試し重なりを検査\"\n      ],\n      \"answer\": 2,\n      \"why\": \"部分集合は指数個。局所的に1つ選んでも最適解を失わない根拠があれば探索を省ける。\"\n    },\n    {\n      \"label\": \"重複する仕事\",\n      \"title\": \"どの仕事を減らせる？\",\n      \"prompt\": \"次に1件選ぶとき、後の選択肢を最も広く残すのは？\",\n      \"choices\": [\n        \"実行可能な中で開始が最も早い予定\",\n        \"実行可能な中で終了が最も早い予定\",\n        \"実行可能な中で長さが最も短い予定\"\n      ],\n      \"answer\": 1,\n      \"why\": \"短いだけでは他の予定をまたぐことがある。終了時刻が早ければ後続が入る余地は狭まらない。\"\n    },\n    {\n      \"label\": \"条件と不変条件\",\n      \"title\": \"この道具を選ぶ根拠\",\n      \"prompt\": \"最早終了を選んでよい証明は？\",\n      \"choices\": [\n        \"最初を置換しても残りの予定が入る\",\n        \"選んだ予定が他より短いので損しない\",\n        \"開始が早い順なら未選択の時間が減る\"\n      ],\n      \"answer\": 0,\n      \"why\": \"交換論法。置換後も同じ件数で重ならない。残りにも繰り返せる。報酬が異なる最大報酬問題にはこの証明は使えず、DPなどが必要。\"\n    },\n    {\n      \"label\": \"手で動かす\",\n      \"title\": \"境界を含めて追跡する\",\n      \"code\": \"intervals=[[0,3],[1,2],[2,4],[4,5]]\\n終了順=[1,2],[0,3],[2,4],[4,5]\",\n      \"prompt\": \"選ぶ予定は？\",\n      \"choices\": [\n        \"[0,3],[4,5]を選び2件\",\n        \"[1,2],[4,5]だけを選び2件\",\n        \"[1,2],[2,4],[4,5]を選び3件\"\n      ],\n      \"answer\": 2,\n      \"why\": \"最初に[1,2]を選ぶ。start≥前回endなら端点が接しても採用可能。\"\n    },\n    {\n      \"label\": \"ヒントなしで転用\",\n      \"title\": \"別の状況でも組み立てる\",\n      \"prompt\": \"同じ区間集合から、重複がなくなるまで最少何件削除するかを求めたい。新しい探索は必要？ また各削除に異なる費用があると何が変わる？\",\n      \"transfer\": true,\n      \"hints\": [\n        \"残せる最大件数と削除数の関係を考える。\",\n        \"件数ならn−最大保持数。費用が違うと同じ選択が最適とは限らない。\"\n      ],\n      \"why\": \"単位削除費用なら答えはn−最大非重複件数。異なる費用なら保持する費用総額を最大化する問題になり、最早終了だけでは足りない。\",\n      \"reference\": \"removed = intervals.length - maximumCompatibleCount(intervals)\",\n      \"check\": \"□ 素朴な解法から改善を説明した\\n□ 保持する情報と更新条件を説明した\\n□ 空・最小・境界の入力を確認した\\n□ 時間と追加領域を説明した\"\n    }\n  ],\n  \"implementationId\": \"learn-greedy\",\n  \"category\": \"algorithm\",\n  \"contentVersion\": \"2026-10-12.2\",\n  \"authors\": [\n    {\n      \"type\": \"ai-assisted\",\n      \"name\": \"Original interview-practice material\"\n    }\n  ],\n  \"sources\": []\n}",
+      "steps": [
+        {
+          "id": "step-1",
+          "phase": "まず、素朴に",
+          "title": "正しさを先に作る",
+          "prompt": "最大件数を確実に求めるなら？",
+          "choices": [
+            {
+              "id": "choice-0",
+              "text": "開始順に選び、重なるものを除外",
+              "explanation": "部分集合は指数個。局所的に1つ選んでも最適解を失わない根拠があれば探索を省ける。"
+            },
+            {
+              "id": "choice-1",
+              "text": "長さ順に選び、重なるものを除外",
+              "explanation": "部分集合は指数個。局所的に1つ選んでも最適解を失わない根拠があれば探索を省ける。"
+            },
+            {
+              "id": "choice-2",
+              "text": "全ての部分集合を試し重なりを検査",
+              "explanation": "部分集合は指数個。局所的に1つ選んでも最適解を失わない根拠があれば探索を省ける。"
+            }
+          ],
+          "correctChoiceID": "choice-2",
+          "explanation": "部分集合は指数個。局所的に1つ選んでも最適解を失わない根拠があれば探索を省ける。",
+          "code": null,
+          "hints": null,
+          "reference": null,
+          "check": null
+        },
+        {
+          "id": "step-2",
+          "phase": "重複する仕事",
+          "title": "どの仕事を減らせる？",
+          "prompt": "次に1件選ぶとき、後の選択肢を最も広く残すのは？",
+          "choices": [
+            {
+              "id": "choice-0",
+              "text": "実行可能な中で開始が最も早い予定",
+              "explanation": "短いだけでは他の予定をまたぐことがある。終了時刻が早ければ後続が入る余地は狭まらない。"
+            },
+            {
+              "id": "choice-1",
+              "text": "実行可能な中で終了が最も早い予定",
+              "explanation": "短いだけでは他の予定をまたぐことがある。終了時刻が早ければ後続が入る余地は狭まらない。"
+            },
+            {
+              "id": "choice-2",
+              "text": "実行可能な中で長さが最も短い予定",
+              "explanation": "短いだけでは他の予定をまたぐことがある。終了時刻が早ければ後続が入る余地は狭まらない。"
+            }
+          ],
+          "correctChoiceID": "choice-1",
+          "explanation": "短いだけでは他の予定をまたぐことがある。終了時刻が早ければ後続が入る余地は狭まらない。",
+          "code": null,
+          "hints": null,
+          "reference": null,
+          "check": null
+        },
+        {
+          "id": "step-3",
+          "phase": "条件と不変条件",
+          "title": "この道具を選ぶ根拠",
+          "prompt": "最早終了を選んでよい証明は？",
+          "choices": [
+            {
+              "id": "choice-0",
+              "text": "最初を置換しても残りの予定が入る",
+              "explanation": "交換論法。置換後も同じ件数で重ならない。残りにも繰り返せる。報酬が異なる最大報酬問題にはこの証明は使えず、DPなどが必要。"
+            },
+            {
+              "id": "choice-1",
+              "text": "選んだ予定が他より短いので損しない",
+              "explanation": "交換論法。置換後も同じ件数で重ならない。残りにも繰り返せる。報酬が異なる最大報酬問題にはこの証明は使えず、DPなどが必要。"
+            },
+            {
+              "id": "choice-2",
+              "text": "開始が早い順なら未選択の時間が減る",
+              "explanation": "交換論法。置換後も同じ件数で重ならない。残りにも繰り返せる。報酬が異なる最大報酬問題にはこの証明は使えず、DPなどが必要。"
+            }
+          ],
+          "correctChoiceID": "choice-0",
+          "explanation": "交換論法。置換後も同じ件数で重ならない。残りにも繰り返せる。報酬が異なる最大報酬問題にはこの証明は使えず、DPなどが必要。",
+          "code": null,
+          "hints": null,
+          "reference": null,
+          "check": null
+        },
+        {
+          "id": "step-4",
+          "phase": "手で動かす",
+          "title": "境界を含めて追跡する",
+          "prompt": "選ぶ予定は？",
+          "choices": [
+            {
+              "id": "choice-0",
+              "text": "[0,3],[4,5]を選び2件",
+              "explanation": "最初に[1,2]を選ぶ。start≥前回endなら端点が接しても採用可能。"
+            },
+            {
+              "id": "choice-1",
+              "text": "[1,2],[4,5]だけを選び2件",
+              "explanation": "最初に[1,2]を選ぶ。start≥前回endなら端点が接しても採用可能。"
+            },
+            {
+              "id": "choice-2",
+              "text": "[1,2],[2,4],[4,5]を選び3件",
+              "explanation": "最初に[1,2]を選ぶ。start≥前回endなら端点が接しても採用可能。"
+            }
+          ],
+          "correctChoiceID": "choice-2",
+          "explanation": "最初に[1,2]を選ぶ。start≥前回endなら端点が接しても採用可能。",
+          "code": "intervals=[[0,3],[1,2],[2,4],[4,5]]\n終了順=[1,2],[0,3],[2,4],[4,5]",
+          "hints": null,
+          "reference": null,
+          "check": null
+        },
+        {
+          "id": "step-5",
+          "phase": "ヒントなしで転用",
+          "title": "別の状況でも組み立てる",
+          "prompt": "同じ区間集合から、重複がなくなるまで最少何件削除するかを求めたい。新しい探索は必要？ また各削除に異なる費用があると何が変わる？",
+          "choices": [],
+          "correctChoiceID": null,
+          "explanation": "単位削除費用なら答えはn−最大非重複件数。異なる費用なら保持する費用総額を最大化する問題になり、最早終了だけでは足りない。",
+          "code": null,
+          "hints": [
+            "残せる最大件数と削除数の関係を考える。",
+            "件数ならn−最大保持数。費用が違うと同じ選択が最適とは限らない。"
+          ],
+          "reference": "removed = intervals.length - maximumCompatibleCount(intervals)",
+          "check": "□ 素朴な解法から改善を説明した\n□ 保持する情報と更新条件を説明した\n□ 空・最小・境界の入力を確認した\n□ 時間と追加領域を説明した"
+        }
+      ],
+      "notes": "対応する実装問題 ID：learn-greedy（アルゴリズム実装カタログ）"
+    },
+    {
+      "id": "learn-dp",
+      "title": "同じ小問題を一度だけ解く",
+      "category": "アルゴリズム",
+      "summary": "Dynamic programming",
+      "authors": [
+        {
+          "type": "ai-assisted",
+          "name": "Original interview-practice material"
+        }
+      ],
+      "contentVersion": "2026-10-12.2",
+      "sources": [],
+      "estimatedDuration": "約10〜15分",
+      "prerequisites": null,
+      "englishPrompt": null,
+      "originalRecordJSON": "{\n  \"id\": \"learn-dp\",\n  \"name\": \"同じ小問題を一度だけ解く\",\n  \"time\": \"約10〜15分\",\n  \"pattern\": \"Dynamic programming\",\n  \"problemId\": \"learn-dp\",\n  \"steps\": [\n    {\n      \"label\": \"まず、素朴に\",\n      \"title\": \"正しさを先に作る\",\n      \"prompt\": \"最後に使う額面を全て試すとどうなる？\",\n      \"choices\": [\n        \"最初に作れた枚数で探索を打ち切る\",\n        \"各額面を最後の1枚として残額を比較\",\n        \"最大額面を最後の1枚として残額を計算\"\n      ],\n      \"answer\": 1,\n      \"why\": \"最大から選ぶと4+1+1の3枚、最適は3+3の2枚。全探索は同じ残額を何度も解く。\"\n    },\n    {\n      \"label\": \"重複する仕事\",\n      \"title\": \"どの仕事を減らせる？\",\n      \"prompt\": \"履歴全体ではなく何を覚えれば以後の最適値を決められる？\",\n      \"choices\": [\n        \"作る金額を状態として最少枚数を持つ\",\n        \"直前の額面を状態として最少枚数を持つ\",\n        \"選んだ枚数を状態として残額を1つ持つ\"\n      ],\n      \"answer\": 0,\n      \"why\": \"硬貨は無制限で、過去の順序が今後の選択肢を変えない。同じ金額の最少枚数は再利用できる。使用回数に制限があるなら状態を追加する。\"\n    },\n    {\n      \"label\": \"条件と不変条件\",\n      \"title\": \"この道具を選ぶ根拠\",\n      \"prompt\": \"dp[x]をxを作る最少枚数とすると、初期値と遷移は？\",\n      \"choices\": [\n        \"dp[0]=0、他0、全てのcで最小化\",\n        \"dp[0]=0、他∞、最大のcだけを使う\",\n        \"dp[0]=0、他∞、全てのcで最小化\"\n      ],\n      \"answer\": 2,\n      \"why\": \"正の額面なのでx-c<x。金額の小さい順なら参照先は確定。到達不能∞を区別し、最後に∞なら-1に変える。\"\n    },\n    {\n      \"label\": \"手で動かす\",\n      \"title\": \"境界を含めて追跡する\",\n      \"code\": \"coins=[1,3,4]\\ndp[0..5]=[0,1,2,1,1,2]\",\n      \"prompt\": \"dp[6]の候補と答えは？\",\n      \"choices\": [\n        \"額面1の候補だけを使い3枚\",\n        \"3,2,3の最小を取り2枚\",\n        \"最大額面4を使い残り2と合わせ3枚\"\n      ],\n      \"answer\": 1,\n      \"why\": \"最適解の最後の1枚を外すと残りも最適である必要がある。全ての最後の額面を比べれば取りこぼさない。\"\n    },\n    {\n      \"label\": \"ヒントなしで転用\",\n      \"title\": \"別の状況でも組み立てる\",\n      \"prompt\": \"一直線の保管箱から価値を最大化して選びたい。ただし隣同士は選べない。価値は非負。先頭i個の最適値は、i個目を選ぶ場合と選ばない場合からどう求める？\",\n      \"transfer\": true,\n      \"hints\": [\n        \"最後を選ぶなら、その直前は選べない。\",\n        \"dp[i]=max(dp[i-1],dp[i-2]+value[i-1]) を考える。\"\n      ],\n      \"why\": \"選ばない最適値と、2つ前までの最適値＋現在価値の大きい方。基底dp[0]=0、dp[1]=value[0]。2状態だけ保持すればO(n)時間O(1)領域。空なら0。\",\n      \"reference\": \"a=0;b=0; for value: next=max(b,a+value); a=b;b=next;return b\",\n      \"check\": \"□ 素朴な解法から改善を説明した\\n□ 保持する情報と更新条件を説明した\\n□ 空・最小・境界の入力を確認した\\n□ 時間と追加領域を説明した\"\n    }\n  ],\n  \"implementationId\": \"learn-dp\",\n  \"category\": \"algorithm\",\n  \"contentVersion\": \"2026-10-12.2\",\n  \"authors\": [\n    {\n      \"type\": \"ai-assisted\",\n      \"name\": \"Original interview-practice material\"\n    }\n  ],\n  \"sources\": []\n}",
+      "steps": [
+        {
+          "id": "step-1",
+          "phase": "まず、素朴に",
+          "title": "正しさを先に作る",
+          "prompt": "最後に使う額面を全て試すとどうなる？",
+          "choices": [
+            {
+              "id": "choice-0",
+              "text": "最初に作れた枚数で探索を打ち切る",
+              "explanation": "最大から選ぶと4+1+1の3枚、最適は3+3の2枚。全探索は同じ残額を何度も解く。"
+            },
+            {
+              "id": "choice-1",
+              "text": "各額面を最後の1枚として残額を比較",
+              "explanation": "最大から選ぶと4+1+1の3枚、最適は3+3の2枚。全探索は同じ残額を何度も解く。"
+            },
+            {
+              "id": "choice-2",
+              "text": "最大額面を最後の1枚として残額を計算",
+              "explanation": "最大から選ぶと4+1+1の3枚、最適は3+3の2枚。全探索は同じ残額を何度も解く。"
+            }
+          ],
+          "correctChoiceID": "choice-1",
+          "explanation": "最大から選ぶと4+1+1の3枚、最適は3+3の2枚。全探索は同じ残額を何度も解く。",
+          "code": null,
+          "hints": null,
+          "reference": null,
+          "check": null
+        },
+        {
+          "id": "step-2",
+          "phase": "重複する仕事",
+          "title": "どの仕事を減らせる？",
+          "prompt": "履歴全体ではなく何を覚えれば以後の最適値を決められる？",
+          "choices": [
+            {
+              "id": "choice-0",
+              "text": "作る金額を状態として最少枚数を持つ",
+              "explanation": "硬貨は無制限で、過去の順序が今後の選択肢を変えない。同じ金額の最少枚数は再利用できる。使用回数に制限があるなら状態を追加する。"
+            },
+            {
+              "id": "choice-1",
+              "text": "直前の額面を状態として最少枚数を持つ",
+              "explanation": "硬貨は無制限で、過去の順序が今後の選択肢を変えない。同じ金額の最少枚数は再利用できる。使用回数に制限があるなら状態を追加する。"
+            },
+            {
+              "id": "choice-2",
+              "text": "選んだ枚数を状態として残額を1つ持つ",
+              "explanation": "硬貨は無制限で、過去の順序が今後の選択肢を変えない。同じ金額の最少枚数は再利用できる。使用回数に制限があるなら状態を追加する。"
+            }
+          ],
+          "correctChoiceID": "choice-0",
+          "explanation": "硬貨は無制限で、過去の順序が今後の選択肢を変えない。同じ金額の最少枚数は再利用できる。使用回数に制限があるなら状態を追加する。",
+          "code": null,
+          "hints": null,
+          "reference": null,
+          "check": null
+        },
+        {
+          "id": "step-3",
+          "phase": "条件と不変条件",
+          "title": "この道具を選ぶ根拠",
+          "prompt": "dp[x]をxを作る最少枚数とすると、初期値と遷移は？",
+          "choices": [
+            {
+              "id": "choice-0",
+              "text": "dp[0]=0、他0、全てのcで最小化",
+              "explanation": "正の額面なのでx-c<x。金額の小さい順なら参照先は確定。到達不能∞を区別し、最後に∞なら-1に変える。"
+            },
+            {
+              "id": "choice-1",
+              "text": "dp[0]=0、他∞、最大のcだけを使う",
+              "explanation": "正の額面なのでx-c<x。金額の小さい順なら参照先は確定。到達不能∞を区別し、最後に∞なら-1に変える。"
+            },
+            {
+              "id": "choice-2",
+              "text": "dp[0]=0、他∞、全てのcで最小化",
+              "explanation": "正の額面なのでx-c<x。金額の小さい順なら参照先は確定。到達不能∞を区別し、最後に∞なら-1に変える。"
+            }
+          ],
+          "correctChoiceID": "choice-2",
+          "explanation": "正の額面なのでx-c<x。金額の小さい順なら参照先は確定。到達不能∞を区別し、最後に∞なら-1に変える。",
+          "code": null,
+          "hints": null,
+          "reference": null,
+          "check": null
+        },
+        {
+          "id": "step-4",
+          "phase": "手で動かす",
+          "title": "境界を含めて追跡する",
+          "prompt": "dp[6]の候補と答えは？",
+          "choices": [
+            {
+              "id": "choice-0",
+              "text": "額面1の候補だけを使い3枚",
+              "explanation": "最適解の最後の1枚を外すと残りも最適である必要がある。全ての最後の額面を比べれば取りこぼさない。"
+            },
+            {
+              "id": "choice-1",
+              "text": "3,2,3の最小を取り2枚",
+              "explanation": "最適解の最後の1枚を外すと残りも最適である必要がある。全ての最後の額面を比べれば取りこぼさない。"
+            },
+            {
+              "id": "choice-2",
+              "text": "最大額面4を使い残り2と合わせ3枚",
+              "explanation": "最適解の最後の1枚を外すと残りも最適である必要がある。全ての最後の額面を比べれば取りこぼさない。"
+            }
+          ],
+          "correctChoiceID": "choice-1",
+          "explanation": "最適解の最後の1枚を外すと残りも最適である必要がある。全ての最後の額面を比べれば取りこぼさない。",
+          "code": "coins=[1,3,4]\ndp[0..5]=[0,1,2,1,1,2]",
+          "hints": null,
+          "reference": null,
+          "check": null
+        },
+        {
+          "id": "step-5",
+          "phase": "ヒントなしで転用",
+          "title": "別の状況でも組み立てる",
+          "prompt": "一直線の保管箱から価値を最大化して選びたい。ただし隣同士は選べない。価値は非負。先頭i個の最適値は、i個目を選ぶ場合と選ばない場合からどう求める？",
+          "choices": [],
+          "correctChoiceID": null,
+          "explanation": "選ばない最適値と、2つ前までの最適値＋現在価値の大きい方。基底dp[0]=0、dp[1]=value[0]。2状態だけ保持すればO(n)時間O(1)領域。空なら0。",
+          "code": null,
+          "hints": [
+            "最後を選ぶなら、その直前は選べない。",
+            "dp[i]=max(dp[i-1],dp[i-2]+value[i-1]) を考える。"
+          ],
+          "reference": "a=0;b=0; for value: next=max(b,a+value); a=b;b=next;return b",
+          "check": "□ 素朴な解法から改善を説明した\n□ 保持する情報と更新条件を説明した\n□ 空・最小・境界の入力を確認した\n□ 時間と追加領域を説明した"
+        }
+      ],
+      "notes": "対応する実装問題 ID：learn-dp（アルゴリズム実装カタログ）"
     },
     {
       "id": "learn-stack",
@@ -2451,318 +3058,18 @@
         }
       ],
       "notes": "対応する実装問題 ID：learn-backtrack（アルゴリズム実装カタログ）"
-    },
-    {
-      "id": "learn-greedy",
-      "title": "安全な選択を証明する",
-      "category": "アルゴリズム",
-      "summary": "Greedy / intervals",
-      "authors": [
-        {
-          "type": "ai-assisted",
-          "name": "Original interview-practice material"
-        }
-      ],
-      "contentVersion": "2026-10-12.2",
-      "sources": [],
-      "estimatedDuration": "約10〜15分",
-      "prerequisites": null,
-      "englishPrompt": null,
-      "originalRecordJSON": "{\n  \"id\": \"learn-greedy\",\n  \"name\": \"安全な選択を証明する\",\n  \"time\": \"約10〜15分\",\n  \"pattern\": \"Greedy / intervals\",\n  \"problemId\": \"learn-greedy\",\n  \"steps\": [\n    {\n      \"label\": \"まず、素朴に\",\n      \"title\": \"正しさを先に作る\",\n      \"prompt\": \"最大件数を確実に求めるなら？\",\n      \"choices\": [\n        \"開始順に選び、重なるものを除外\",\n        \"長さ順に選び、重なるものを除外\",\n        \"全ての部分集合を試し重なりを検査\"\n      ],\n      \"answer\": 2,\n      \"why\": \"部分集合は指数個。局所的に1つ選んでも最適解を失わない根拠があれば探索を省ける。\"\n    },\n    {\n      \"label\": \"重複する仕事\",\n      \"title\": \"どの仕事を減らせる？\",\n      \"prompt\": \"次に1件選ぶとき、後の選択肢を最も広く残すのは？\",\n      \"choices\": [\n        \"実行可能な中で開始が最も早い予定\",\n        \"実行可能な中で終了が最も早い予定\",\n        \"実行可能な中で長さが最も短い予定\"\n      ],\n      \"answer\": 1,\n      \"why\": \"短いだけでは他の予定をまたぐことがある。終了時刻が早ければ後続が入る余地は狭まらない。\"\n    },\n    {\n      \"label\": \"条件と不変条件\",\n      \"title\": \"この道具を選ぶ根拠\",\n      \"prompt\": \"最早終了を選んでよい証明は？\",\n      \"choices\": [\n        \"最初を置換しても残りの予定が入る\",\n        \"選んだ予定が他より短いので損しない\",\n        \"開始が早い順なら未選択の時間が減る\"\n      ],\n      \"answer\": 0,\n      \"why\": \"交換論法。置換後も同じ件数で重ならない。残りにも繰り返せる。報酬が異なる最大報酬問題にはこの証明は使えず、DPなどが必要。\"\n    },\n    {\n      \"label\": \"手で動かす\",\n      \"title\": \"境界を含めて追跡する\",\n      \"code\": \"intervals=[[0,3],[1,2],[2,4],[4,5]]\\n終了順=[1,2],[0,3],[2,4],[4,5]\",\n      \"prompt\": \"選ぶ予定は？\",\n      \"choices\": [\n        \"[0,3],[4,5]を選び2件\",\n        \"[1,2],[4,5]だけを選び2件\",\n        \"[1,2],[2,4],[4,5]を選び3件\"\n      ],\n      \"answer\": 2,\n      \"why\": \"最初に[1,2]を選ぶ。start≥前回endなら端点が接しても採用可能。\"\n    },\n    {\n      \"label\": \"ヒントなしで転用\",\n      \"title\": \"別の状況でも組み立てる\",\n      \"prompt\": \"同じ区間集合から、重複がなくなるまで最少何件削除するかを求めたい。新しい探索は必要？ また各削除に異なる費用があると何が変わる？\",\n      \"transfer\": true,\n      \"hints\": [\n        \"残せる最大件数と削除数の関係を考える。\",\n        \"件数ならn−最大保持数。費用が違うと同じ選択が最適とは限らない。\"\n      ],\n      \"why\": \"単位削除費用なら答えはn−最大非重複件数。異なる費用なら保持する費用総額を最大化する問題になり、最早終了だけでは足りない。\",\n      \"reference\": \"removed = intervals.length - maximumCompatibleCount(intervals)\",\n      \"check\": \"□ 素朴な解法から改善を説明した\\n□ 保持する情報と更新条件を説明した\\n□ 空・最小・境界の入力を確認した\\n□ 時間と追加領域を説明した\"\n    }\n  ],\n  \"implementationId\": \"learn-greedy\",\n  \"category\": \"algorithm\",\n  \"contentVersion\": \"2026-10-12.2\",\n  \"authors\": [\n    {\n      \"type\": \"ai-assisted\",\n      \"name\": \"Original interview-practice material\"\n    }\n  ],\n  \"sources\": []\n}",
-      "steps": [
-        {
-          "id": "step-1",
-          "phase": "まず、素朴に",
-          "title": "正しさを先に作る",
-          "prompt": "最大件数を確実に求めるなら？",
-          "choices": [
-            {
-              "id": "choice-0",
-              "text": "開始順に選び、重なるものを除外",
-              "explanation": "部分集合は指数個。局所的に1つ選んでも最適解を失わない根拠があれば探索を省ける。"
-            },
-            {
-              "id": "choice-1",
-              "text": "長さ順に選び、重なるものを除外",
-              "explanation": "部分集合は指数個。局所的に1つ選んでも最適解を失わない根拠があれば探索を省ける。"
-            },
-            {
-              "id": "choice-2",
-              "text": "全ての部分集合を試し重なりを検査",
-              "explanation": "部分集合は指数個。局所的に1つ選んでも最適解を失わない根拠があれば探索を省ける。"
-            }
-          ],
-          "correctChoiceID": "choice-2",
-          "explanation": "部分集合は指数個。局所的に1つ選んでも最適解を失わない根拠があれば探索を省ける。",
-          "code": null,
-          "hints": null,
-          "reference": null,
-          "check": null
-        },
-        {
-          "id": "step-2",
-          "phase": "重複する仕事",
-          "title": "どの仕事を減らせる？",
-          "prompt": "次に1件選ぶとき、後の選択肢を最も広く残すのは？",
-          "choices": [
-            {
-              "id": "choice-0",
-              "text": "実行可能な中で開始が最も早い予定",
-              "explanation": "短いだけでは他の予定をまたぐことがある。終了時刻が早ければ後続が入る余地は狭まらない。"
-            },
-            {
-              "id": "choice-1",
-              "text": "実行可能な中で終了が最も早い予定",
-              "explanation": "短いだけでは他の予定をまたぐことがある。終了時刻が早ければ後続が入る余地は狭まらない。"
-            },
-            {
-              "id": "choice-2",
-              "text": "実行可能な中で長さが最も短い予定",
-              "explanation": "短いだけでは他の予定をまたぐことがある。終了時刻が早ければ後続が入る余地は狭まらない。"
-            }
-          ],
-          "correctChoiceID": "choice-1",
-          "explanation": "短いだけでは他の予定をまたぐことがある。終了時刻が早ければ後続が入る余地は狭まらない。",
-          "code": null,
-          "hints": null,
-          "reference": null,
-          "check": null
-        },
-        {
-          "id": "step-3",
-          "phase": "条件と不変条件",
-          "title": "この道具を選ぶ根拠",
-          "prompt": "最早終了を選んでよい証明は？",
-          "choices": [
-            {
-              "id": "choice-0",
-              "text": "最初を置換しても残りの予定が入る",
-              "explanation": "交換論法。置換後も同じ件数で重ならない。残りにも繰り返せる。報酬が異なる最大報酬問題にはこの証明は使えず、DPなどが必要。"
-            },
-            {
-              "id": "choice-1",
-              "text": "選んだ予定が他より短いので損しない",
-              "explanation": "交換論法。置換後も同じ件数で重ならない。残りにも繰り返せる。報酬が異なる最大報酬問題にはこの証明は使えず、DPなどが必要。"
-            },
-            {
-              "id": "choice-2",
-              "text": "開始が早い順なら未選択の時間が減る",
-              "explanation": "交換論法。置換後も同じ件数で重ならない。残りにも繰り返せる。報酬が異なる最大報酬問題にはこの証明は使えず、DPなどが必要。"
-            }
-          ],
-          "correctChoiceID": "choice-0",
-          "explanation": "交換論法。置換後も同じ件数で重ならない。残りにも繰り返せる。報酬が異なる最大報酬問題にはこの証明は使えず、DPなどが必要。",
-          "code": null,
-          "hints": null,
-          "reference": null,
-          "check": null
-        },
-        {
-          "id": "step-4",
-          "phase": "手で動かす",
-          "title": "境界を含めて追跡する",
-          "prompt": "選ぶ予定は？",
-          "choices": [
-            {
-              "id": "choice-0",
-              "text": "[0,3],[4,5]を選び2件",
-              "explanation": "最初に[1,2]を選ぶ。start≥前回endなら端点が接しても採用可能。"
-            },
-            {
-              "id": "choice-1",
-              "text": "[1,2],[4,5]だけを選び2件",
-              "explanation": "最初に[1,2]を選ぶ。start≥前回endなら端点が接しても採用可能。"
-            },
-            {
-              "id": "choice-2",
-              "text": "[1,2],[2,4],[4,5]を選び3件",
-              "explanation": "最初に[1,2]を選ぶ。start≥前回endなら端点が接しても採用可能。"
-            }
-          ],
-          "correctChoiceID": "choice-2",
-          "explanation": "最初に[1,2]を選ぶ。start≥前回endなら端点が接しても採用可能。",
-          "code": "intervals=[[0,3],[1,2],[2,4],[4,5]]\n終了順=[1,2],[0,3],[2,4],[4,5]",
-          "hints": null,
-          "reference": null,
-          "check": null
-        },
-        {
-          "id": "step-5",
-          "phase": "ヒントなしで転用",
-          "title": "別の状況でも組み立てる",
-          "prompt": "同じ区間集合から、重複がなくなるまで最少何件削除するかを求めたい。新しい探索は必要？ また各削除に異なる費用があると何が変わる？",
-          "choices": [],
-          "correctChoiceID": null,
-          "explanation": "単位削除費用なら答えはn−最大非重複件数。異なる費用なら保持する費用総額を最大化する問題になり、最早終了だけでは足りない。",
-          "code": null,
-          "hints": [
-            "残せる最大件数と削除数の関係を考える。",
-            "件数ならn−最大保持数。費用が違うと同じ選択が最適とは限らない。"
-          ],
-          "reference": "removed = intervals.length - maximumCompatibleCount(intervals)",
-          "check": "□ 素朴な解法から改善を説明した\n□ 保持する情報と更新条件を説明した\n□ 空・最小・境界の入力を確認した\n□ 時間と追加領域を説明した"
-        }
-      ],
-      "notes": "対応する実装問題 ID：learn-greedy（アルゴリズム実装カタログ）"
-    },
-    {
-      "id": "learn-dp",
-      "title": "同じ小問題を一度だけ解く",
-      "category": "アルゴリズム",
-      "summary": "Dynamic programming",
-      "authors": [
-        {
-          "type": "ai-assisted",
-          "name": "Original interview-practice material"
-        }
-      ],
-      "contentVersion": "2026-10-12.2",
-      "sources": [],
-      "estimatedDuration": "約10〜15分",
-      "prerequisites": null,
-      "englishPrompt": null,
-      "originalRecordJSON": "{\n  \"id\": \"learn-dp\",\n  \"name\": \"同じ小問題を一度だけ解く\",\n  \"time\": \"約10〜15分\",\n  \"pattern\": \"Dynamic programming\",\n  \"problemId\": \"learn-dp\",\n  \"steps\": [\n    {\n      \"label\": \"まず、素朴に\",\n      \"title\": \"正しさを先に作る\",\n      \"prompt\": \"最後に使う額面を全て試すとどうなる？\",\n      \"choices\": [\n        \"最初に作れた枚数で探索を打ち切る\",\n        \"各額面を最後の1枚として残額を比較\",\n        \"最大額面を最後の1枚として残額を計算\"\n      ],\n      \"answer\": 1,\n      \"why\": \"最大から選ぶと4+1+1の3枚、最適は3+3の2枚。全探索は同じ残額を何度も解く。\"\n    },\n    {\n      \"label\": \"重複する仕事\",\n      \"title\": \"どの仕事を減らせる？\",\n      \"prompt\": \"履歴全体ではなく何を覚えれば以後の最適値を決められる？\",\n      \"choices\": [\n        \"作る金額を状態として最少枚数を持つ\",\n        \"直前の額面を状態として最少枚数を持つ\",\n        \"選んだ枚数を状態として残額を1つ持つ\"\n      ],\n      \"answer\": 0,\n      \"why\": \"硬貨は無制限で、過去の順序が今後の選択肢を変えない。同じ金額の最少枚数は再利用できる。使用回数に制限があるなら状態を追加する。\"\n    },\n    {\n      \"label\": \"条件と不変条件\",\n      \"title\": \"この道具を選ぶ根拠\",\n      \"prompt\": \"dp[x]をxを作る最少枚数とすると、初期値と遷移は？\",\n      \"choices\": [\n        \"dp[0]=0、他0、全てのcで最小化\",\n        \"dp[0]=0、他∞、最大のcだけを使う\",\n        \"dp[0]=0、他∞、全てのcで最小化\"\n      ],\n      \"answer\": 2,\n      \"why\": \"正の額面なのでx-c<x。金額の小さい順なら参照先は確定。到達不能∞を区別し、最後に∞なら-1に変える。\"\n    },\n    {\n      \"label\": \"手で動かす\",\n      \"title\": \"境界を含めて追跡する\",\n      \"code\": \"coins=[1,3,4]\\ndp[0..5]=[0,1,2,1,1,2]\",\n      \"prompt\": \"dp[6]の候補と答えは？\",\n      \"choices\": [\n        \"額面1の候補だけを使い3枚\",\n        \"3,2,3の最小を取り2枚\",\n        \"最大額面4を使い残り2と合わせ3枚\"\n      ],\n      \"answer\": 1,\n      \"why\": \"最適解の最後の1枚を外すと残りも最適である必要がある。全ての最後の額面を比べれば取りこぼさない。\"\n    },\n    {\n      \"label\": \"ヒントなしで転用\",\n      \"title\": \"別の状況でも組み立てる\",\n      \"prompt\": \"一直線の保管箱から価値を最大化して選びたい。ただし隣同士は選べない。価値は非負。先頭i個の最適値は、i個目を選ぶ場合と選ばない場合からどう求める？\",\n      \"transfer\": true,\n      \"hints\": [\n        \"最後を選ぶなら、その直前は選べない。\",\n        \"dp[i]=max(dp[i-1],dp[i-2]+value[i-1]) を考える。\"\n      ],\n      \"why\": \"選ばない最適値と、2つ前までの最適値＋現在価値の大きい方。基底dp[0]=0、dp[1]=value[0]。2状態だけ保持すればO(n)時間O(1)領域。空なら0。\",\n      \"reference\": \"a=0;b=0; for value: next=max(b,a+value); a=b;b=next;return b\",\n      \"check\": \"□ 素朴な解法から改善を説明した\\n□ 保持する情報と更新条件を説明した\\n□ 空・最小・境界の入力を確認した\\n□ 時間と追加領域を説明した\"\n    }\n  ],\n  \"implementationId\": \"learn-dp\",\n  \"category\": \"algorithm\",\n  \"contentVersion\": \"2026-10-12.2\",\n  \"authors\": [\n    {\n      \"type\": \"ai-assisted\",\n      \"name\": \"Original interview-practice material\"\n    }\n  ],\n  \"sources\": []\n}",
-      "steps": [
-        {
-          "id": "step-1",
-          "phase": "まず、素朴に",
-          "title": "正しさを先に作る",
-          "prompt": "最後に使う額面を全て試すとどうなる？",
-          "choices": [
-            {
-              "id": "choice-0",
-              "text": "最初に作れた枚数で探索を打ち切る",
-              "explanation": "最大から選ぶと4+1+1の3枚、最適は3+3の2枚。全探索は同じ残額を何度も解く。"
-            },
-            {
-              "id": "choice-1",
-              "text": "各額面を最後の1枚として残額を比較",
-              "explanation": "最大から選ぶと4+1+1の3枚、最適は3+3の2枚。全探索は同じ残額を何度も解く。"
-            },
-            {
-              "id": "choice-2",
-              "text": "最大額面を最後の1枚として残額を計算",
-              "explanation": "最大から選ぶと4+1+1の3枚、最適は3+3の2枚。全探索は同じ残額を何度も解く。"
-            }
-          ],
-          "correctChoiceID": "choice-1",
-          "explanation": "最大から選ぶと4+1+1の3枚、最適は3+3の2枚。全探索は同じ残額を何度も解く。",
-          "code": null,
-          "hints": null,
-          "reference": null,
-          "check": null
-        },
-        {
-          "id": "step-2",
-          "phase": "重複する仕事",
-          "title": "どの仕事を減らせる？",
-          "prompt": "履歴全体ではなく何を覚えれば以後の最適値を決められる？",
-          "choices": [
-            {
-              "id": "choice-0",
-              "text": "作る金額を状態として最少枚数を持つ",
-              "explanation": "硬貨は無制限で、過去の順序が今後の選択肢を変えない。同じ金額の最少枚数は再利用できる。使用回数に制限があるなら状態を追加する。"
-            },
-            {
-              "id": "choice-1",
-              "text": "直前の額面を状態として最少枚数を持つ",
-              "explanation": "硬貨は無制限で、過去の順序が今後の選択肢を変えない。同じ金額の最少枚数は再利用できる。使用回数に制限があるなら状態を追加する。"
-            },
-            {
-              "id": "choice-2",
-              "text": "選んだ枚数を状態として残額を1つ持つ",
-              "explanation": "硬貨は無制限で、過去の順序が今後の選択肢を変えない。同じ金額の最少枚数は再利用できる。使用回数に制限があるなら状態を追加する。"
-            }
-          ],
-          "correctChoiceID": "choice-0",
-          "explanation": "硬貨は無制限で、過去の順序が今後の選択肢を変えない。同じ金額の最少枚数は再利用できる。使用回数に制限があるなら状態を追加する。",
-          "code": null,
-          "hints": null,
-          "reference": null,
-          "check": null
-        },
-        {
-          "id": "step-3",
-          "phase": "条件と不変条件",
-          "title": "この道具を選ぶ根拠",
-          "prompt": "dp[x]をxを作る最少枚数とすると、初期値と遷移は？",
-          "choices": [
-            {
-              "id": "choice-0",
-              "text": "dp[0]=0、他0、全てのcで最小化",
-              "explanation": "正の額面なのでx-c<x。金額の小さい順なら参照先は確定。到達不能∞を区別し、最後に∞なら-1に変える。"
-            },
-            {
-              "id": "choice-1",
-              "text": "dp[0]=0、他∞、最大のcだけを使う",
-              "explanation": "正の額面なのでx-c<x。金額の小さい順なら参照先は確定。到達不能∞を区別し、最後に∞なら-1に変える。"
-            },
-            {
-              "id": "choice-2",
-              "text": "dp[0]=0、他∞、全てのcで最小化",
-              "explanation": "正の額面なのでx-c<x。金額の小さい順なら参照先は確定。到達不能∞を区別し、最後に∞なら-1に変える。"
-            }
-          ],
-          "correctChoiceID": "choice-2",
-          "explanation": "正の額面なのでx-c<x。金額の小さい順なら参照先は確定。到達不能∞を区別し、最後に∞なら-1に変える。",
-          "code": null,
-          "hints": null,
-          "reference": null,
-          "check": null
-        },
-        {
-          "id": "step-4",
-          "phase": "手で動かす",
-          "title": "境界を含めて追跡する",
-          "prompt": "dp[6]の候補と答えは？",
-          "choices": [
-            {
-              "id": "choice-0",
-              "text": "額面1の候補だけを使い3枚",
-              "explanation": "最適解の最後の1枚を外すと残りも最適である必要がある。全ての最後の額面を比べれば取りこぼさない。"
-            },
-            {
-              "id": "choice-1",
-              "text": "3,2,3の最小を取り2枚",
-              "explanation": "最適解の最後の1枚を外すと残りも最適である必要がある。全ての最後の額面を比べれば取りこぼさない。"
-            },
-            {
-              "id": "choice-2",
-              "text": "最大額面4を使い残り2と合わせ3枚",
-              "explanation": "最適解の最後の1枚を外すと残りも最適である必要がある。全ての最後の額面を比べれば取りこぼさない。"
-            }
-          ],
-          "correctChoiceID": "choice-1",
-          "explanation": "最適解の最後の1枚を外すと残りも最適である必要がある。全ての最後の額面を比べれば取りこぼさない。",
-          "code": "coins=[1,3,4]\ndp[0..5]=[0,1,2,1,1,2]",
-          "hints": null,
-          "reference": null,
-          "check": null
-        },
-        {
-          "id": "step-5",
-          "phase": "ヒントなしで転用",
-          "title": "別の状況でも組み立てる",
-          "prompt": "一直線の保管箱から価値を最大化して選びたい。ただし隣同士は選べない。価値は非負。先頭i個の最適値は、i個目を選ぶ場合と選ばない場合からどう求める？",
-          "choices": [],
-          "correctChoiceID": null,
-          "explanation": "選ばない最適値と、2つ前までの最適値＋現在価値の大きい方。基底dp[0]=0、dp[1]=value[0]。2状態だけ保持すればO(n)時間O(1)領域。空なら0。",
-          "code": null,
-          "hints": [
-            "最後を選ぶなら、その直前は選べない。",
-            "dp[i]=max(dp[i-1],dp[i-2]+value[i-1]) を考える。"
-          ],
-          "reference": "a=0;b=0; for value: next=max(b,a+value); a=b;b=next;return b",
-          "check": "□ 素朴な解法から改善を説明した\n□ 保持する情報と更新条件を説明した\n□ 空・最小・境界の入力を確認した\n□ 時間と追加領域を説明した"
-        }
-      ],
-      "notes": "対応する実装問題 ID：learn-dp（アルゴリズム実装カタログ）"
     }
   ],
   "sourceRelease": {
-    "contentVersion": "2026-10-12.2",
-    "archiveSHA256": "25e1417c988dd53bb8b00d63a05c12b0e5e34bbd2a7093e3c64e725126e54818",
-    "manifestSHA256": "cd9bfb7e8dd33f5818838de626e63df963651a7451439e0eb35ae90bc59215cc",
-    "contentFileSHA256": "763a855a7adbc30d8df11cc2ff2dc6dab1256c8a5b692bccfadcbe888450cbe4"
+    "baseCatalogVersion": "2026.10.1301",
+    "baseCommitSHA": "f70fb5a8fb21cae0bcb113a8e7e744f5e824bb35",
+    "originalArchiveProvenance": {
+      "contentVersion": "2026-10-12.2",
+      "archiveSHA256": "25e1417c988dd53bb8b00d63a05c12b0e5e34bbd2a7093e3c64e725126e54818",
+      "manifestSHA256": "cd9bfb7e8dd33f5818838de626e63df963651a7451439e0eb35ae90bc59215cc",
+      "contentFileSHA256": "763a855a7adbc30d8df11cc2ff2dc6dab1256c8a5b692bccfadcbe888450cbe4"
+    },
+    "revision": "2026-10-13.2",
+    "note": "Archive hashes identify the original base material, not this revised catalog."
   }
 }

@@ -4,6 +4,14 @@
   "title": "システム設計",
   "releases": [
     {
+      "version": "2026.10.1302",
+      "catalogSchemaVersion": 1,
+      "commitSHA": "a88d40cd5922d06129b435e1e43ad6f747e887de",
+      "payloadPath": "native-design.json",
+      "bytes": 126282,
+      "sha256": "360fcefdd280a127b50a3d776ca0033e498809d002c8094f991d7c0982ab4a6d"
+    },
+    {
       "version": "2026.10.1301",
       "catalogSchemaVersion": 1,
       "commitSHA": "f70fb5a8fb21cae0bcb113a8e7e744f5e824bb35",

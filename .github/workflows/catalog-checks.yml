@@ -1,0 +1,16 @@
+name: catalog-checks
+on:
+  push:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Check schemas, immutable payloads, and sample answers
+        run: python3 tests/verify_catalogs.py

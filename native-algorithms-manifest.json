@@ -1,8 +1,16 @@
 {
   "schemaVersion": 1,
   "catalogID": "interviewlab.algorithms.derivation",
-  "title": "アルゴリズムの導出",
+  "title": "典型アルゴリズムの考え方",
   "releases": [
+    {
+      "version": "2026.10.1302",
+      "catalogSchemaVersion": 1,
+      "commitSHA": "a88d40cd5922d06129b435e1e43ad6f747e887de",
+      "payloadPath": "native-algorithms.json",
+      "bytes": 233966,
+      "sha256": "4b3c5d6f0681f4eef25bc96ddc53b266122911a7e2b5044f5e362fcde9598103"
+    },
     {
       "version": "2026.10.1301",
       "catalogSchemaVersion": 1,
