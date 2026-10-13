@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "catalogID": "interviewlab.cs-math",
+  "title": "CS・数学の基礎",
+  "releases": [
+    {
+      "version": "2026.10.1202",
+      "catalogSchemaVersion": 1,
+      "commitSHA": null,
+      "payloadPath": "native-foundations.json",
+      "bytes": 168997,
+      "sha256": "52e9faf6fd927d9e532b59c60ac632197af73b0559f6ed1b7900c79b019f9c0e"
+    }
+  ]
+}

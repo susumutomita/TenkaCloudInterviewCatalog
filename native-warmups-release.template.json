@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "catalogID": "interviewlab.warmups",
+  "title": "短い練習カード",
+  "releases": [
+    {
+      "version": "2026.10.1202",
+      "catalogSchemaVersion": 1,
+      "commitSHA": null,
+      "payloadPath": "native-warmups.json",
+      "bytes": 44763,
+      "sha256": "e7d876fda609234c1bb9e3b7e3e3fe494395f9c154e6041b08ac8edd9a0cbe10"
+    }
+  ]
+}

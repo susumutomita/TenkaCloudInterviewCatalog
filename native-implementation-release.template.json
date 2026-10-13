@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "catalogID": "interviewlab.algorithms.implementation",
+  "title": "アルゴリズム実装・説明",
+  "releases": [
+    {
+      "version": "2026.10.1202",
+      "catalogSchemaVersion": 1,
+      "commitSHA": null,
+      "payloadPath": "native-implementation.json",
+      "bytes": 142389,
+      "sha256": "da26dcefff8363250f0eb59d8184c8fa177b97b5b95c1668af107626291fa9ad"
+    }
+  ]
+}

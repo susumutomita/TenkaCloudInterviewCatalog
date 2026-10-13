@@ -4,43 +4,43 @@
     {
       "fileName": "native-algorithms.json",
       "catalogID": "interviewlab.algorithms.derivation",
-      "version": "2026.10.1202",
-      "sha256": "d4be93eabcdef3431c510ec1b3c5c7c7e5d7473b955dd1af814f298ec9e37276",
+      "version": "2026.10.1301",
+      "sha256": "0cb0ab2cf5959bedfdae6358f9f1e65c6c5338939af49a9581f5a1fe1f04d729",
       "lessons": 18
     },
     {
       "fileName": "native-foundations.json",
       "catalogID": "interviewlab.cs-math",
-      "version": "2026.10.1202",
-      "sha256": "52e9faf6fd927d9e532b59c60ac632197af73b0559f6ed1b7900c79b019f9c0e",
+      "version": "2026.10.1301",
+      "sha256": "c28441326648a2a547195d9adf11b89ef47df71eeba98246602fcae6f98f90f4",
       "lessons": 14
     },
     {
       "fileName": "native-design.json",
       "catalogID": "interviewlab.system-design",
-      "version": "2026.10.1202",
-      "sha256": "e71a4dc89da0e7532c1d03d8149c1133247ab32c4158ce33fa198558d058e46c",
+      "version": "2026.10.1301",
+      "sha256": "60f45ff48cea0d78f8242cefbf09aceaf537e4eff9e22121d9e6f7f658fe0573",
       "lessons": 6
     },
     {
       "fileName": "native-implementation.json",
       "catalogID": "interviewlab.algorithms.implementation",
-      "version": "2026.10.1202",
-      "sha256": "da26dcefff8363250f0eb59d8184c8fa177b97b5b95c1668af107626291fa9ad",
+      "version": "2026.10.1301",
+      "sha256": "6aff85804680aff994c11aac36948a19964748b7706c3c3b425c4507f7d2fe8c",
       "lessons": 23
     },
     {
       "fileName": "native-warmups.json",
       "catalogID": "interviewlab.warmups",
-      "version": "2026.10.1202",
-      "sha256": "e7d876fda609234c1bb9e3b7e3e3fe494395f9c154e6041b08ac8edd9a0cbe10",
+      "version": "2026.10.1301",
+      "sha256": "1217d2eced9d3def3fa396a99ef14754bd5d55d19a25e4380299439477076e7e",
       "lessons": 12
     },
     {
       "fileName": "native-interview.json",
       "catalogID": "interviewlab.interview-practice",
-      "version": "2026.10.1202",
-      "sha256": "f666e653024aac38bf42acc3152d9ba6bd386cb34b1b862a629b680543dc7214",
+      "version": "2026.10.1301",
+      "sha256": "cd7c069cafdc87c592bfb6c80f550992c3746bc8036b362cc3e8fc6462aad5c8",
       "lessons": 14
     }
   ]

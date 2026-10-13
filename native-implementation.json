@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "catalogID": "interviewlab.algorithms.implementation",
-  "version": "2026.10.1202",
+  "version": "2026.10.1301",
   "title": "アルゴリズム実装・説明",
   "lessons": [
     {
@@ -241,7 +241,9 @@
           "correctChoiceID": null,
           "explanation": "自己申告の記録です。テスト合格や実装の正しさを意味しません。\n開始括弧をスタックへ。終了括弧では対応する開始括弧が pop されるか確認し、最後に空かを見る。時間 O(n)、領域 O(n)。",
           "code": "function solve(s)",
-          "hints": ["最後に開いた括弧が最初に閉じる必要があります。"],
+          "hints": [
+            "最後に開いた括弧が最初に閉じる必要があります。"
+          ],
           "reference": "function solve(s) {\n  const st=[], pairs={\")\":\"(\",\"]\":\"[\",\"}\":\"{\"};\n  for (const c of s) {\n    if (\"([{\".includes(c)) st.push(c);\n    else if (st.pop()!==pairs[c]) return false;\n  }\n  return st.length===0;\n}\n\nテスト例（表示のみ・未実行）：\n[\n  {\n    \"a\": [\n      \"([]{})\"\n    ],\n    \"e\": true\n  },\n  {\n    \"a\": [\n      \"([)]\"\n    ],\n    \"e\": false\n  },\n  {\n    \"a\": [\n      \"\"\n    ],\n    \"e\": true\n  },\n  {\n    \"a\": [\n      \"(\"\n    ],\n    \"e\": false\n  },\n  {\n    \"a\": [\n      \")(\"\n    ],\n    \"e\": false\n  },\n  {\n    \"a\": [\n      \"{}[]()\"\n    ],\n    \"e\": true\n  }\n]",
           "check": "□ 実行したテストと未実行を区別した\n□ 計算量・不変条件・反例を説明した"
         }
@@ -812,7 +814,6 @@
     "contentVersion": "2026-10-12.2",
     "archiveSHA256": "25e1417c988dd53bb8b00d63a05c12b0e5e34bbd2a7093e3c64e725126e54818",
     "manifestSHA256": "cd9bfb7e8dd33f5818838de626e63df963651a7451439e0eb35ae90bc59215cc",
-    "contentFileSHA256": "b9df7f7be43aae42393a67b96d78f1a4410061abfcb8dd0a45172206cb8bcf6f",
-    "libraryFileID": "libfile_869c3c1b919c8191bb6ce7903070c665"
+    "contentFileSHA256": "b9df7f7be43aae42393a67b96d78f1a4410061abfcb8dd0a45172206cb8bcf6f"
   }
 }

@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "catalogID": "interviewlab.system-design",
-  "version": "2026.10.1202",
+  "version": "2026.10.1301",
   "title": "システム設計",
   "lessons": [
     {
@@ -927,7 +927,6 @@
     "contentVersion": "2026-10-12.2",
     "archiveSHA256": "25e1417c988dd53bb8b00d63a05c12b0e5e34bbd2a7093e3c64e725126e54818",
     "manifestSHA256": "cd9bfb7e8dd33f5818838de626e63df963651a7451439e0eb35ae90bc59215cc",
-    "contentFileSHA256": "763a855a7adbc30d8df11cc2ff2dc6dab1256c8a5b692bccfadcbe888450cbe4",
-    "libraryFileID": "libfile_869c3c1b919c8191bb6ce7903070c665"
+    "contentFileSHA256": "763a855a7adbc30d8df11cc2ff2dc6dab1256c8a5b692bccfadcbe888450cbe4"
   }
 }

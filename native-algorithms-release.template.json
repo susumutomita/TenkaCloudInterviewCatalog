@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "catalogID": "interviewlab.algorithms.derivation",
+  "title": "アルゴリズムの導出",
+  "releases": [
+    {
+      "version": "2026.10.1202",
+      "catalogSchemaVersion": 1,
+      "commitSHA": null,
+      "payloadPath": "native-algorithms.json",
+      "bytes": 212675,
+      "sha256": "d4be93eabcdef3431c510ec1b3c5c7c7e5d7473b955dd1af814f298ec9e37276"
+    }
+  ]
+}
