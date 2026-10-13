@@ -4,12 +4,12 @@
   "title": "アルゴリズムの導出",
   "releases": [
     {
-      "version": "2026.10.1202",
+      "version": "2026.10.1301",
       "catalogSchemaVersion": 1,
-      "commitSHA": null,
+      "commitSHA": "f70fb5a8fb21cae0bcb113a8e7e744f5e824bb35",
       "payloadPath": "native-algorithms.json",
-      "bytes": 212675,
-      "sha256": "d4be93eabcdef3431c510ec1b3c5c7c7e5d7473b955dd1af814f298ec9e37276"
+      "bytes": 212682,
+      "sha256": "0cb0ab2cf5959bedfdae6358f9f1e65c6c5338939af49a9581f5a1fe1f04d729"
     }
   ]
 }

@@ -4,12 +4,12 @@
   "title": "面接・経験・英語の説明",
   "releases": [
     {
-      "version": "2026.10.1202",
+      "version": "2026.10.1301",
       "catalogSchemaVersion": 1,
-      "commitSHA": null,
+      "commitSHA": "f70fb5a8fb21cae0bcb113a8e7e744f5e824bb35",
       "payloadPath": "native-interview.json",
-      "bytes": 53082,
-      "sha256": "f666e653024aac38bf42acc3152d9ba6bd386cb34b1b862a629b680543dc7214"
+      "bytes": 53017,
+      "sha256": "cd7c069cafdc87c592bfb6c80f550992c3746bc8036b362cc3e8fc6462aad5c8"
     }
   ]
 }

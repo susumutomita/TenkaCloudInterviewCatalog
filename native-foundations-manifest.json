@@ -4,12 +4,12 @@
   "title": "CS・数学の基礎",
   "releases": [
     {
-      "version": "2026.10.1202",
+      "version": "2026.10.1301",
       "catalogSchemaVersion": 1,
-      "commitSHA": null,
+      "commitSHA": "f70fb5a8fb21cae0bcb113a8e7e744f5e824bb35",
       "payloadPath": "native-foundations.json",
-      "bytes": 168997,
-      "sha256": "52e9faf6fd927d9e532b59c60ac632197af73b0559f6ed1b7900c79b019f9c0e"
+      "bytes": 169156,
+      "sha256": "c28441326648a2a547195d9adf11b89ef47df71eeba98246602fcae6f98f90f4"
     }
   ]
 }

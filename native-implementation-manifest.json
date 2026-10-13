@@ -4,12 +4,12 @@
   "title": "アルゴリズム実装・説明",
   "releases": [
     {
-      "version": "2026.10.1202",
+      "version": "2026.10.1301",
       "catalogSchemaVersion": 1,
-      "commitSHA": null,
+      "commitSHA": "f70fb5a8fb21cae0bcb113a8e7e744f5e824bb35",
       "payloadPath": "native-implementation.json",
-      "bytes": 142389,
-      "sha256": "da26dcefff8363250f0eb59d8184c8fa177b97b5b95c1668af107626291fa9ad"
+      "bytes": 142348,
+      "sha256": "6aff85804680aff994c11aac36948a19964748b7706c3c3b425c4507f7d2fe8c"
     }
   ]
 }
